@@ -7,272 +7,249 @@
 <meta name="description" content="Nabhan Lyric Chowdhury. Rust and TypeScript desktop tools that run on your machine and stay there.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Michroma&family=VT323&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#05050a; --panel:#0c0c16; --fg:#e8e8f2; --dim:#8a8aa3; --line:#23233a;
-  --pink:#ff4fd8; --cyan:#4ff3ff; --lime:#c6ff4f;
-  --chrome:linear-gradient(180deg,#ffffff 0%,#c9cbd6 30%,#5b5d6e 50%,#e9ebf5 54%,#9a9caf 75%,#ffffff 100%);
-  --holo:linear-gradient(100deg,var(--pink),var(--cyan) 40%,var(--lime) 70%,var(--pink));
-  --disp:'Michroma',sans-serif; --pix:'VT323',monospace; --mono:'JetBrains Mono',monospace;
+  --bg:#0a0a0a; --fg:#ededed; --dim:#7a7a7a; --line:#262626;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --sans:'Space Grotesk',system-ui,sans-serif;
   --g:clamp(1rem,4vw,3.5rem);
   --ease:cubic-bezier(.16,1,.3,1);
 }
+body.inv{--bg:#ededed; --fg:#0a0a0a; --dim:#666; --line:#cfcfcf}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:15px;line-height:1.6;overflow-x:hidden}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.5;overflow-x:hidden;transition:background .5s var(--ease),color .5s var(--ease)}
 a{color:inherit;text-decoration:none}
-::selection{background:var(--pink);color:#000}
+::selection{background:var(--fg);color:var(--bg)}
 
-/* background: grid floor glow + scanlines */
-body::before{content:"";position:fixed;inset:0;z-index:-2;
-  background:
-    radial-gradient(60% 50% at 80% 10%,rgba(255,79,216,.14),transparent 70%),
-    radial-gradient(50% 40% at 10% 90%,rgba(79,243,255,.12),transparent 70%),
-    var(--bg)}
-body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:60;
-  background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
-
-#gl{position:fixed;inset:0;z-index:-1;width:100vw;height:100vh;display:block}
+/* film grain */
+body::after{content:"";position:fixed;inset:-50%;pointer-events:none;z-index:50;opacity:.08;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain .6s steps(4) infinite}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-3%,2%)}50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-1%)}100%{transform:translate(0,0)}}
 
 /* top bar */
 .bar{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;justify-content:space-between;align-items:center;
-  padding:.9rem var(--g);font-family:var(--pix);font-size:1.25rem;letter-spacing:.06em;text-transform:uppercase;
-  background:linear-gradient(180deg,rgba(5,5,10,.85),rgba(5,5,10,0));}
+  padding:1rem var(--g);font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;mix-blend-mode:difference;color:#fff}
 .bar nav{display:flex;gap:1.4rem}
-.bar a:hover{color:var(--cyan);text-shadow:0 0 8px var(--cyan)}
-.logo{display:flex;align-items:center;gap:.5rem}
-.logo i{width:10px;height:10px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime);animation:pulse 1.6s infinite}
-@keyframes pulse{50%{opacity:.3}}
-@media (max-width:640px){.bar nav a:not(:last-child){display:none}}
+.bar button{all:unset;cursor:pointer}
+.bar a:hover,.bar button:hover{text-decoration:line-through}
+@media (max-width:640px){.bar nav a{display:none}}
+
+section{padding:clamp(5rem,12vh,9rem) var(--g);border-top:1px solid var(--line);position:relative}
+.tag{font-family:var(--mono);font-size:.72rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;display:flex;gap:1rem;margin-bottom:2.5rem}
+.tag b{color:var(--fg);font-weight:400}
 
 /* hero */
-.hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:6rem var(--g) 3rem;position:relative}
-.kicker{font-family:var(--pix);font-size:1.3rem;color:var(--cyan);letter-spacing:.1em;margin-bottom:1.2rem;text-shadow:0 0 10px rgba(79,243,255,.6)}
-.name{font-family:var(--disp);font-weight:400;line-height:.95;letter-spacing:-.02em;font-size:clamp(1.5rem,8.4vw,9rem)}
-.name span{display:block;background:var(--chrome);-webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 2px 0 rgba(255,79,216,.55)) drop-shadow(0 -2px 0 rgba(79,243,255,.45))}
-.name span:nth-child(2){-webkit-text-stroke:1px rgba(255,255,255,.7);background:none;color:transparent;filter:none;text-shadow:0 0 22px rgba(255,79,216,.45)}
-.hero .row{display:flex;justify-content:space-between;align-items:flex-end;gap:2rem;flex-wrap:wrap;margin-top:2.4rem}
-.hero p{max-width:40ch;color:var(--fg)}
-.type{font-family:var(--pix);font-size:1.4rem;color:var(--lime);min-height:1.4em;text-shadow:0 0 8px rgba(198,255,79,.6)}
-.type::after{content:"_";animation:blink 1s steps(1) infinite}
+.hero{min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;border:0;padding-bottom:3rem;overflow:hidden}
+#camGL{position:absolute;top:0;right:0;width:62%;height:100%;cursor:grab;touch-action:pan-y}
+#camGL:active{cursor:grabbing}
+.hint{position:absolute;right:var(--g);top:5.2rem;font-family:var(--mono);font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+.hero h1{position:relative;z-index:2;pointer-events:none;font-size:clamp(3rem,11.5vw,11rem);line-height:.84;letter-spacing:-.06em;font-weight:700}
+.hero h1 span{display:block;position:relative;width:max-content}
+.hero h1 .o{-webkit-text-stroke:1.5px var(--fg);color:transparent}
+.star{position:absolute;color:var(--fg);pointer-events:none;animation:spin 24s linear infinite}
+.star.r{animation-direction:reverse;animation-duration:32s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.s1{width:.85em;right:-.8em;top:-.5em}
+.s2{width:.45em;right:-.95em;top:.25em}
+.s3{width:.6em;left:-.22em;top:-.6em}
+.hero .row{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;gap:2rem;flex-wrap:wrap;margin-top:2.2rem}
+.hero p{max-width:34ch;font-size:clamp(1rem,1.5vw,1.2rem)}
+.type{font-family:var(--mono);font-size:.85rem;color:var(--dim);min-height:1.4em}
+.type::after{content:"█";animation:blink 1s steps(1) infinite;margin-left:2px}
 @keyframes blink{50%{opacity:0}}
-.badges{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1.4rem}
-.badge{font-family:var(--pix);font-size:1.05rem;padding:.15rem .6rem;border:1px solid var(--line);background:rgba(12,12,22,.7)}
-.badge b{color:var(--pink);font-weight:400}
-
-/* y2k OS windows */
-section{padding:clamp(3rem,8vh,6rem) var(--g)}
-.win{background:rgba(12,12,22,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  border:1px solid #3a3a5c;box-shadow:0 0 0 1px #000,0 30px 80px -20px rgba(255,79,216,.25),inset 0 1px 0 rgba(255,255,255,.08);border-radius:10px;overflow:hidden}
-.tbar{display:flex;align-items:center;justify-content:space-between;padding:.45rem .8rem;font-family:var(--pix);font-size:1.15rem;letter-spacing:.06em;
-  background:linear-gradient(180deg,#2b2b48,#14142a);border-bottom:1px solid #3a3a5c}
-.tbar .t{display:flex;gap:.6rem;align-items:center}
-.tbar .t::before{content:"✦";color:var(--pink)}
-.dots{display:flex;gap:.4rem}
-.dots span{width:13px;height:13px;border-radius:50%;background:var(--chrome);box-shadow:inset 0 0 0 1px rgba(0,0,0,.5)}
-.wbody{padding:clamp(1.4rem,4vw,3rem)}
-h2{font-family:var(--disp);font-weight:400;font-size:clamp(1.6rem,4vw,3rem);letter-spacing:-.01em;line-height:1.1;margin-bottom:2rem;
-  background:var(--holo);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:holo 6s linear infinite}
-@keyframes holo{to{background-position:200% 0}}
+@media (max-width:760px){#camGL{width:100%;height:58%}.hint{display:none}}
 
 /* about */
-.about{display:grid;grid-template-columns:1.2fr 1fr;gap:clamp(2rem,5vw,4rem)}
-.about .big{font-size:clamp(1.1rem,1.8vw,1.4rem);line-height:1.55}
-.about .big em{font-style:normal;color:var(--cyan)}
-.facts div{display:flex;justify-content:space-between;gap:1rem;padding:.65rem 0;border-bottom:1px dashed var(--line);font-size:.88rem}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,5rem);align-items:center}
+.about-grid .big{font-size:clamp(1.5rem,3vw,2.5rem);line-height:1.15;letter-spacing:-.02em}
+.about-grid .big em{font-style:normal;color:var(--dim)}
+.facts{font-family:var(--mono);font-size:.82rem;margin-top:2.5rem}
+.facts div{display:flex;justify-content:space-between;gap:1rem;padding:.8rem 0;border-bottom:1px solid var(--line)}
 .facts span:first-child{color:var(--dim)}
-@media (max-width:820px){.about{grid-template-columns:1fr}}
+#cardGL{width:100%;height:clamp(380px,48vw,600px);display:block;cursor:grab;touch-action:pan-y}
+@media (max-width:820px){.about-grid{grid-template-columns:1fr}}
 
-/* work */
-.work{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
-.card{position:relative;display:flex;flex-direction:column;gap:.8rem;padding:1.5rem;border:1px solid var(--line);border-radius:8px;
-  background:linear-gradient(160deg,rgba(255,255,255,.04),rgba(255,255,255,0));transition:transform .4s var(--ease),border-color .3s,box-shadow .3s}
-.card:hover{transform:translateY(-4px);border-color:var(--pink);box-shadow:0 0 0 1px var(--pink),0 0 30px rgba(255,79,216,.35)}
-.card .n{font-family:var(--pix);font-size:1.1rem;color:var(--pink)}
-.card h3{font-family:var(--disp);font-weight:400;font-size:clamp(1.2rem,2.2vw,1.7rem);line-height:1.15}
-.card p{color:var(--dim);font-size:.9rem}
-.card .tags{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:auto}
-.card .tags span{font-family:var(--pix);font-size:1rem;padding:0 .5rem;border:1px solid var(--line);color:var(--cyan)}
-.card .go{position:absolute;top:1.2rem;right:1.3rem;font-family:var(--pix);font-size:1.3rem;transition:transform .4s var(--ease)}
-.card:hover .go{transform:translate(3px,-3px);color:var(--pink)}
-.card.feat{grid-column:1/-1}
-.card.feat h3{font-size:clamp(1.6rem,3.4vw,2.6rem)}
-.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;margin-top:1.2rem}
-.mini .card{padding:1.1rem}
-.mini .card h3{font-size:1rem}
-@media (max-width:900px){.mini{grid-template-columns:1fr 1fr}}
-@media (max-width:640px){.work,.mini{grid-template-columns:1fr}}
+/* stack */
+.stack{display:grid;grid-template-columns:repeat(8,1fr);border:1px solid var(--line)}
+.stack div{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:2rem .5rem;border-right:1px solid var(--line);transition:background .3s}
+.stack div:last-child{border-right:0}
+.stack img{width:clamp(28px,3.2vw,44px);height:auto;filter:invert(1);transition:transform .5s var(--ease)}
+body.inv .stack img{filter:none}
+.stack span{font-family:var(--mono);font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.stack div:hover img{transform:translateY(-6px) rotate(-8deg)}
+@media (max-width:820px){.stack{grid-template-columns:repeat(4,1fr)}.stack div:nth-child(4){border-right:0}.stack div:nth-child(-n+4){border-bottom:1px solid var(--line)}}
 
-/* marquee */
-.marquee{overflow:hidden;white-space:nowrap;padding:1.2rem 0;border-block:1px solid var(--line);background:rgba(5,5,10,.6)}
-.marquee div{display:inline-block;animation:scroll 30s linear infinite;font-family:var(--disp);font-size:clamp(1.6rem,4.5vw,3.4rem)}
-.marquee b{font-weight:400;background:var(--chrome);-webkit-background-clip:text;background-clip:text;color:transparent}
-.marquee i{font-style:normal;color:var(--pink);margin:0 .6em;text-shadow:0 0 10px var(--pink)}
-@keyframes scroll{to{transform:translateX(-50%)}}
-
-/* off keyboard */
-.off{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
-.off article{border:1px solid var(--line);border-radius:8px;padding:1.3rem}
-.off h4{font-family:var(--disp);font-weight:400;font-size:1.05rem;margin-bottom:.6rem}
-.off p{color:var(--dim);font-size:.88rem}
-.off a{display:inline-block;margin-top:1rem;font-family:var(--pix);font-size:1.15rem;color:var(--lime)}
-.off a:hover{text-shadow:0 0 8px var(--lime)}
-@media (max-width:820px){.off{grid-template-columns:1fr}}
+/* work index */
+.work{list-style:none;isolation:isolate}
+.work li{border-bottom:1px solid var(--line)}
+.work li:first-child{border-top:1px solid var(--line)}
+.work a{display:grid;grid-template-columns:3.5rem 1fr auto;gap:1.5rem;align-items:baseline;padding:1.6rem 0;position:relative;transition:padding .5s var(--ease),color .3s}
+.work a::before{content:"";position:absolute;inset:0;background:var(--fg);transform:scaleY(0);transform-origin:bottom;transition:transform .5s var(--ease);z-index:-1}
+.work a:hover{color:var(--bg);padding-left:1.2rem;padding-right:1.2rem}
+.work a:hover::before{transform:scaleY(1)}
+.work a:hover .n,.work a:hover .meta,.work a:hover .desc{color:var(--bg)}
+.work .n{font-family:var(--mono);font-size:.75rem;color:var(--dim)}
+.work h3{font-size:clamp(1.8rem,4.6vw,3.8rem);letter-spacing:-.04em;line-height:1;font-weight:500}
+.work .desc{color:var(--dim);max-width:62ch;margin-top:.7rem;font-size:.98rem}
+.work .meta{font-family:var(--mono);font-size:.72rem;color:var(--dim);text-align:right;white-space:nowrap}
+.work .arrow{display:inline-block;transition:transform .5s var(--ease)}
+.work a:hover .arrow{transform:rotate(-45deg)}
+@media (max-width:640px){.work a{grid-template-columns:2.2rem 1fr}.work .meta{grid-column:2;text-align:left}}
 
 /* contact */
-.say{font-family:var(--disp);font-size:clamp(2.2rem,8vw,6.5rem);line-height:1;display:inline-block;
-  background:var(--chrome);-webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 0 18px rgba(79,243,255,.35))}
-.say:hover{filter:drop-shadow(0 0 28px rgba(255,79,216,.7))}
-.links{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:2rem}
-.links a{font-family:var(--pix);font-size:1.2rem;padding:.35rem 1rem;border-radius:999px;border:1px solid #3a3a5c;
-  background:linear-gradient(180deg,#24243c,#0e0e1c);box-shadow:inset 0 1px 0 rgba(255,255,255,.15);transition:all .25s}
-.links a:hover{border-color:var(--cyan);box-shadow:0 0 14px rgba(79,243,255,.5),inset 0 1px 0 rgba(255,255,255,.2);color:var(--cyan)}
+.contact h2{font-size:clamp(3.5rem,13vw,11rem);line-height:.85;letter-spacing:-.06em;font-weight:700}
+.contact h2 a{transition:letter-spacing .6s var(--ease)}
+.contact h2 a:hover{letter-spacing:-.02em}
+.links{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:3rem}
+.links a{font-family:var(--mono);font-size:.78rem;border:1px solid var(--line);padding:.6rem 1rem;border-radius:999px;transition:all .3s}
+.links a:hover{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(--dim);display:flex;justify-content:space-between;border-top:1px solid var(--line)}
 
-footer{padding:2rem var(--g) 2.5rem;font-family:var(--pix);font-size:1.1rem;color:var(--dim);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem}
-footer .hit{color:var(--lime)}
-
-.rv{opacity:0;transform:translateY(40px) scale(.98);transition:opacity 1s var(--ease),transform 1s var(--ease)}
+.rv{opacity:0;transform:translateY(30px);transition:opacity 1s var(--ease),transform 1s var(--ease)}
 .rv.in{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.marquee div,h2{animation:none}.rv{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){body::after,.star{animation:none}.rv{opacity:1;transform:none}}
 </style>
 </head>
 <body>
-<canvas id="gl" aria-hidden="true"></canvas>
 
 <header class="bar">
-  <a href="#top" class="logo"><i></i>NLC.EXE</a>
+  <a href="#top">lyric.</a>
   <nav>
     <a href="#about">about</a>
+    <a href="#stack">stack</a>
     <a href="#work">work</a>
-    <a href="#off">offline</a>
     <a href="#contact">contact</a>
+    <button id="inv" aria-label="Invert colours">[ invert ]</button>
   </nav>
 </header>
 
 <section class="hero" id="top">
-  <div class="kicker">&gt;&gt; welcome to my corner of the web.</div>
-  <h1 class="name"><span>NABHAN</span><span>LYRIC</span><span>CHOWDHURY</span></h1>
+  <canvas id="camGL" aria-label="3D film camera, drag to rotate"></canvas>
+  <div class="hint">drag to rotate ↻</div>
+  <h1>
+    <span>nabhan<svg class="star s3" data-star="5" viewBox="0 0 100 100"></svg></span>
+    <span class="o">lyric<svg class="star s1" data-star="4" viewBox="0 0 100 100"></svg><svg class="star s2 r" data-star="5" viewBox="0 0 100 100"></svg></span>
+    <span>chowdhury.</span>
+  </h1>
   <div class="row">
-    <div>
-      <p>I write software that runs on your machine and stays there. Mostly Rust and TypeScript, mostly desktop.</p>
-      <div class="badges">
-        <span class="badge"><b>●</b> DHAKA, BD <span id="clock">--:--</span></span>
-        <span class="badge"><b>●</b> LOCAL-FIRST</span>
-        <span class="badge"><b>●</b> NO TELEMETRY</span>
-      </div>
-    </div>
+    <p>I write software that runs on your machine and stays there. Mostly Rust and TypeScript, mostly desktop.</p>
     <div class="type" id="type"></div>
   </div>
 </section>
 
 <section id="about">
-  <div class="win rv">
-    <div class="tbar"><span class="t">about_me.txt</span><span class="dots"><span></span><span></span><span></span></span></div>
-    <div class="wbody">
-      <h2>// about</h2>
-      <div class="about">
-        <p class="big">Artist, coder, martial artist, writer, reader. I build the tools I wanted to exist and couldn't find, things like video editors, chess engines and dev tooling. <em>Local-first. No telemetry. No cloud.</em></p>
-        <div class="facts">
-          <div><span>name</span><span>Nabhan Lyric Chowdhury</span></div>
-          <div><span>handle</span><span>@Fs1lyric</span></div>
-          <div><span>languages</span><span>Rust · TypeScript · C++ · Python</span></div>
-          <div><span>runs on</span><span>Arch + Hyprland</span></div>
-          <div><span>favourite show</span><span>Dexter, btw</span></div>
-        </div>
+  <div class="tag"><b>01</b><span>/ about me</span></div>
+  <div class="about-grid">
+    <div class="rv">
+      <p class="big">Artist, coder, martial artist, writer, reader. I build the tools I wanted to exist and couldn't find. <em>Local-first. No telemetry. No cloud.</em></p>
+      <div class="facts">
+        <div><span>based in</span><span>Dhaka, Bangladesh</span></div>
+        <div><span>handle</span><span>@Fs1lyric</span></div>
+        <div><span>writing</span><span>Ink Eye, a novel</span></div>
+        <div><span>off-screen</span><span>martial arts · chess · books</span></div>
+        <div><span>favourite show</span><span>Dexter, btw</span></div>
       </div>
     </div>
+    <canvas id="cardGL" aria-label="3D playing cards, drag to fan"></canvas>
+  </div>
+</section>
+
+<section id="stack">
+  <div class="tag"><b>02</b><span>/ stack</span></div>
+  <div class="stack rv">
+    <div><img src="https://cdn.jsdelivr.net/npm/simple-icons@13/icons/rust.svg" alt=""><span>Rust</span></div>
+    <div><img src="https://cdn.jsdelivr.net/npm/simple-icons@13/icons/typescript.svg" alt=""><span>TypeScript</span></div>
+    <div><img src="https://cdn.jsdelivr.net/npm/simple-icons@13/icons/cplusplus.svg" alt=""><span>C++</span></div>
+    <div><img src="https://cdn.jsdelivr.net/npm/simple-icons@13/icons/python.svg" alt=""><span>Python</span></div>
+    <div><img src="https://cdn.jsdelivr.net/npm/simple-icons@13/icons/tauri.svg" alt=""><span>Tauri</span></div>
+    <div><img src="https://cdn.jsdelivr.net/npm/simple-icons@13/icons/ffmpeg.svg" alt=""><span>FFmpeg</span></div>
+    <div><img src="https://cdn.jsdelivr.net/npm/simple-icons@13/icons/sqlite.svg" alt=""><span>SQLite</span></div>
+    <div><img src="https://cdn.jsdelivr.net/npm/simple-icons@13/icons/archlinux.svg" alt=""><span>Arch</span></div>
   </div>
 </section>
 
 <section id="work">
-  <div class="win rv">
-    <div class="tbar"><span class="t">C:\projects\</span><span class="dots"><span></span><span></span><span></span></span></div>
-    <div class="wbody">
-      <h2>// selected work</h2>
-      <div class="work">
-        <a class="card feat" href="https://fs1lyric.github.io/odyssey-design/" target="_blank" rel="noopener">
-          <span class="n">[01]</span><span class="go">↗</span>
-          <h3>Odyssey Design</h3>
-          <p>A local-first desktop suite: documents, spreadsheets, decks and a multi-track video editor. The timeline compiles the whole project into one ffmpeg filter graph, so there are no intermediate renders. 55 effects, real cross-dissolves, two-pass stabilisation, sidechain audio ducking, ~180 tests that render real video.</p>
-          <div class="tags"><span>Rust</span><span>Tauri</span><span>TypeScript</span><span>FFmpeg</span></div>
-        </a>
-        <a class="card" href="https://fs1lyric.github.io/tokenmeter/" target="_blank" rel="noopener">
-          <span class="n">[02]</span><span class="go">↗</span>
-          <h3>tokenmeter</h3>
-          <p>Know where your LLM spend goes. A local proxy that attributes every token to a model, repo and branch, then fails CI when a PR regresses cost.</p>
-          <div class="tags"><span>TypeScript</span><span>CLI</span></div>
-        </a>
-        <a class="card" href="https://github.com/Fs1lyric/chess-engine-1600" target="_blank" rel="noopener">
-          <span class="n">[03]</span><span class="go">↗</span>
-          <h3>chess-engine-1600</h3>
-          <p>A ~1600 ELO engine with a GUI board, move analysis and recommendations. Built for minimal hardware, with no server round-trip.</p>
-          <div class="tags"><span>Engine</span><span>GUI</span></div>
-        </a>
-        <a class="card feat" href="https://github.com/Fs1lyric/nexus-video-editor" target="_blank" rel="noopener">
-          <span class="n">[04]</span><span class="go">↗</span>
-          <h3>Nexus</h3>
-          <p>Single-track video editor, CLI and egui GUI, wrapping ffmpeg for trim, arrange and export. The small predecessor that taught me what Odyssey's timeline needed to become.</p>
-          <div class="tags"><span>Rust</span><span>egui</span></div>
-        </a>
-      </div>
-      <div class="mini">
-        <a class="card" href="https://github.com/Fs1lyric/flowerisy" target="_blank" rel="noopener"><h3>flowerisy</h3><p>Pomodoro timer and to-do list that stays in your browser.</p></a>
-        <a class="card" href="https://fs1lyric.github.io/dotfiles/" target="_blank" rel="noopener"><h3>dotfiles</h3><p>My Arch + Hyprland setup, documented.</p></a>
-        <a class="card" href="https://github.com/Fs1lyric/homebrew-odyssey" target="_blank" rel="noopener"><h3>homebrew / scoop</h3><p>Taps that ship Odyssey to macOS and Windows.</p></a>
-        <a class="card" href="https://github.com/Fs1lyric/wallpapers" target="_blank" rel="noopener"><h3>wallpapers</h3><p>The desktop wallpaper collection.</p></a>
-      </div>
-    </div>
+  <div class="tag"><b>03</b><span>/ projects</span></div>
+  <ul class="work rv">
+    <li><a href="https://fs1lyric.github.io/odyssey-design/" target="_blank" rel="noopener">
+      <span class="n">01</span>
+      <div><h3>Odyssey Design</h3><p class="desc">A local-first desktop suite: documents, spreadsheets, decks and a multi-track video editor. The timeline compiles the whole project into one ffmpeg filter graph, so there are no intermediate renders.</p></div>
+      <span class="meta">Rust · Tauri · TS <span class="arrow">→</span></span></a></li>
+    <li><a href="https://fs1lyric.github.io/tokenmeter/" target="_blank" rel="noopener">
+      <span class="n">02</span>
+      <div><h3>tokenmeter</h3><p class="desc">Know where your LLM spend goes. A local proxy that attributes every token to a model, a repo and a branch, then fails CI when a pull request regresses cost.</p></div>
+      <span class="meta">TypeScript · CLI <span class="arrow">→</span></span></a></li>
+    <li><a href="https://github.com/Fs1lyric/chess-engine-1600" target="_blank" rel="noopener">
+      <span class="n">03</span>
+      <div><h3>chess-engine-1600</h3><p class="desc">A ~1600 ELO engine with a GUI board, move analysis and recommendations. Built for minimal hardware, with no server round-trip.</p></div>
+      <span class="meta">Engine · GUI <span class="arrow">→</span></span></a></li>
+    <li><a href="https://github.com/Fs1lyric/nexus-video-editor" target="_blank" rel="noopener">
+      <span class="n">04</span>
+      <div><h3>Nexus</h3><p class="desc">Single-track video editor, CLI and egui GUI, wrapping ffmpeg for trim, arrange and export. The small predecessor to Odyssey's timeline.</p></div>
+      <span class="meta">Rust · egui <span class="arrow">→</span></span></a></li>
+    <li><a href="https://github.com/Fs1lyric/flowerisy" target="_blank" rel="noopener">
+      <span class="n">05</span>
+      <div><h3>flowerisy</h3><p class="desc">Pomodoro timer and to-do list that stays in your browser.</p></div>
+      <span class="meta">JavaScript <span class="arrow">→</span></span></a></li>
+  </ul>
+</section>
+
+<section class="contact" id="contact">
+  <div class="tag"><b>04</b><span>/ contact me</span></div>
+  <h2 class="rv"><a href="mailto:fs.lyric@proton.me">say<br>hello ↗</a></h2>
+  <div class="links rv">
+    <a href="mailto:fs.lyric@proton.me">fs.lyric@proton.me</a>
+    <a href="https://github.com/Fs1lyric" target="_blank" rel="noopener">github</a>
+    <a href="https://discord.com/users/1467416211364249857" target="_blank" rel="noopener">discord</a>
+    <a href="https://www.instagram.com/volksreader/" target="_blank" rel="noopener">instagram</a>
+    <a href="https://www.chess.com/member/fs1lyric" target="_blank" rel="noopener">chess.com</a>
   </div>
 </section>
 
-<div class="marquee" aria-hidden="true"><div>
-  <b>RUST</b><i>✦</i><b>TYPESCRIPT</b><i>✦</i><b>C++</b><i>✦</i><b>PYTHON</b><i>✦</i><b>TAURI</b><i>✦</i><b>FFMPEG</b><i>✦</i><b>SQLITE</b><i>✦</i><b>ARCH</b><i>✦</i>
-  <b>RUST</b><i>✦</i><b>TYPESCRIPT</b><i>✦</i><b>C++</b><i>✦</i><b>PYTHON</b><i>✦</i><b>TAURI</b><i>✦</i><b>FFMPEG</b><i>✦</i><b>SQLITE</b><i>✦</i><b>ARCH</b><i>✦</i>
-</div></div>
-
-<section id="off">
-  <div class="win rv">
-    <div class="tbar"><span class="t">away_from_keyboard.exe</span><span class="dots"><span></span><span></span><span></span></span></div>
-    <div class="wbody">
-      <h2>// offline</h2>
-      <div class="off">
-        <article><h4>Ink Eye</h4><p>My novel, serialised on WebNovel. Still writing it.</p><a href="https://www.webnovel.com/book/ink-eye_36125155608860405" target="_blank" rel="noopener">&gt; read it</a></article>
-        <article><h4>Chess</h4><p>Played it long enough to write an engine for it. Come lose to me, or the engine.</p><a href="https://www.chess.com/member/fs1lyric" target="_blank" rel="noopener">&gt; challenge</a></article>
-        <article><h4>Martial arts &amp; books</h4><p>Training, and an unreasonable number of books otherwise. Some end up as reels on @volksreader.</p><a href="https://www.instagram.com/volksreader/" target="_blank" rel="noopener">&gt; @volksreader</a></article>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="contact">
-  <div class="win rv">
-    <div class="tbar"><span class="t">new_message.eml</span><span class="dots"><span></span><span></span><span></span></span></div>
-    <div class="wbody">
-      <h2>// contact</h2>
-      <a class="say" href="mailto:fs.lyric@proton.me">SAY HELLO ↗</a>
-      <div class="links">
-        <a href="mailto:fs.lyric@proton.me">fs.lyric@proton.me</a>
-        <a href="https://github.com/Fs1lyric" target="_blank" rel="noopener">github</a>
-        <a href="https://discord.com/users/1467416211364249857" target="_blank" rel="noopener">discord</a>
-        <a href="https://www.instagram.com/volksreader/" target="_blank" rel="noopener">instagram</a>
-        <a href="https://www.chess.com/member/fs1lyric" target="_blank" rel="noopener">chess.com</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<footer><span>© <span id="yr"></span> Nabhan Lyric Chowdhury</span><span>best viewed at 1024×768 <span class="hit">✦</span> built local-first</span></footer>
+<footer><span>© <span id="yr"></span> Nabhan Lyric Chowdhury</span><span>built local-first</span></footer>
 
 <script>
 document.getElementById('yr').textContent = new Date().getFullYear();
-const clock = document.getElementById('clock');
-const tick = () => clock.textContent = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit' });
-tick(); setInterval(tick, 10000);
 
-const lines = ['> building desktop tools in rust', '> video editors, chess engines, dev tooling', '> local-first. no cloud.'];
+const inv = document.getElementById('inv');
+try { if (localStorage.getItem('inv') === '1') document.body.classList.add('inv'); } catch (e) {}
+inv.onclick = () => {
+  const on = document.body.classList.toggle('inv');
+  try { localStorage.setItem('inv', on ? '1' : '0'); } catch (e) {}
+};
+
+// halftone stars: dots inside a star outline, bigger toward the centre, plus a dotted halo
+function starPoly(points, inner) {
+  const p = [];
+  for (let i = 0; i < points * 2; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / points, r = i % 2 ? inner : 48;
+    p.push([50 + Math.cos(a) * r, 50 + Math.sin(a) * r]);
+  }
+  return p;
+}
+function inside(poly, x, y) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+document.querySelectorAll('[data-star]').forEach(svg => {
+  const n = +svg.dataset.star, poly = starPoly(n, n === 4 ? 13 : 20);
+  let dots = '';
+  for (let y = 1; y < 100; y += 3.2) for (let x = 1; x < 100; x += 3.2) {
+    if (!inside(poly, x, y)) continue;
+    const d = Math.hypot(x - 50, y - 50) / 48;
+    dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.75 - d * 1.3).toFixed(2)}"/>`;
+  }
+  svg.innerHTML = `<g fill="currentColor">${dots}</g>`;
+});
+
+const lines = ['I build desktop tools in Rust', 'video editors, chess engines, dev tooling', 'local-first. no telemetry. no cloud.'];
 const el = document.getElementById('type');
 let li = 0, ci = 0, del = false;
 (function loop() {
@@ -281,10 +258,10 @@ let li = 0, ci = 0, del = false;
   if (!del && ci === s.length) { del = true; return setTimeout(loop, 1600); }
   if (del && ci === 0) { del = false; li = (li + 1) % lines.length; }
   ci += del ? -1 : 1;
-  setTimeout(loop, del ? 22 : 50);
+  setTimeout(loop, del ? 25 : 55);
 })();
 
-const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add('in')), { threshold: .08 });
+const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add('in')), { threshold: .12 });
 document.querySelectorAll('.rv').forEach(n => io.observe(n));
 </script>
 
@@ -297,92 +274,210 @@ document.querySelectorAll('.rv').forEach(n => io.observe(n));
 <script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-
-const canvas = document.getElementById('gl');
-let renderer;
-try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); }
-catch (e) { canvas.remove(); throw e; }
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(40, 1, .1, 100);
-camera.position.set(0, 0, 14);
-
-const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
-scene.add(new THREE.PointLight(0xff4fd8, 60, 30).translateX(-6).translateY(4));
-scene.add(new THREE.PointLight(0x4ff3ff, 60, 30).translateX(6).translateY(-4));
-
-const chrome = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: .08 });
-const holo = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: .9, roughness: .12, iridescence: 1, iridescenceIOR: 1.8, iridescenceThicknessRange: [200, 900], clearcoat: 1 });
-
-// Y2K four-point sparkle star
-function starGeo(r = 1, inner = .22) {
-  const s = new THREE.Shape();
-  for (let i = 0; i < 8; i++) {
-    const a = i * Math.PI / 4 + Math.PI / 2, rr = i % 2 ? inner : r;
-    i ? s.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : s.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
-  }
-  return new THREE.ExtrudeGeometry(s, { depth: .18, bevelEnabled: true, bevelThickness: .12, bevelSize: .08, bevelSegments: 6 }).center();
-}
-
-const group = new THREE.Group();
-scene.add(group);
-const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(1.6, .5, 220, 32, 2, 3), holo);
-knot.position.set(3.6, .6, 0);
-const ring = new THREE.Mesh(new THREE.TorusGeometry(2.6, .09, 24, 160), chrome);
-ring.position.copy(knot.position); ring.rotation.x = 1.2;
-const orb = new THREE.Mesh(new THREE.SphereGeometry(.7, 64, 64), holo);
-orb.position.set(-4.5, -2.6, -2);
-group.add(knot, ring, orb);
-
-const stars = [];
-const sg = starGeo();
-[[5.8, 3.4, 1, .7], [1.2, -3.2, 1.5, .5], [-5, 3, -1, .9], [6.4, -2.8, -.5, .45], [-1.4, 4, -3, .4]].forEach(([x, y, z, s], i) => {
-  const m = new THREE.Mesh(sg, i % 2 ? holo : chrome);
-  m.position.set(x, y, z); m.scale.setScalar(s);
-  m.userData = { y, sp: .6 + i * .17 };
-  stars.push(m); group.add(m);
-});
-
-// sparkle dust
-const pts = new Float32Array(600 * 3);
-for (let i = 0; i < pts.length; i++) pts[i] = (Math.random() - .5) * 30;
-const dust = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pts, 3)),
-  new THREE.PointsMaterial({ color: 0xffffff, size: .035, transparent: true, opacity: .7 }));
-scene.add(dust);
-
-function resize() {
-  const w = innerWidth, h = innerHeight;
-  renderer.setSize(w, h, false);
-  camera.aspect = w / h; camera.updateProjectionMatrix();
-  const narrow = w < 760;
-  group.scale.setScalar(narrow ? .6 : 1);
-  group.position.x = narrow ? -1.6 : 0;
-  group.position.y = narrow ? 1.6 : 0;
-}
-addEventListener('resize', resize); resize();
-
-let mx = 0, my = 0;
-addEventListener('pointermove', e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; });
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const clockT = new THREE.Clock();
-(function frame() {
-  const t = still ? 0 : clockT.getElapsedTime();
-  const sc = scrollY / innerHeight;
-  knot.rotation.set(t * .25 + sc, t * .35, 0);
-  ring.rotation.z = t * .4;
-  orb.position.y = -2.6 + Math.sin(t * .9) * .3;
-  stars.forEach(s => { s.rotation.y = t * s.userData.sp * 1.5; s.position.y = s.userData.y + Math.sin(t * s.userData.sp) * .25; });
-  dust.rotation.y = t * .02;
-  group.rotation.y += (mx * .5 - group.rotation.y) * .05;
-  group.rotation.x += (my * .3 - group.rotation.x) * .05;
-  camera.position.y = -sc * 1.5;
-  renderer.render(scene, camera);
-  requestAnimationFrame(frame);
-})();
+
+function canvasTex(w, h, draw, opts = {}) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = opts.data ? THREE.NoColorSpace : THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  if (opts.repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...opts.repeat); }
+  return t;
+}
+
+// One renderer per canvas; renders only while on screen, with drag-to-spin.
+function stage(canvas, fov, build) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  const scene = new THREE.Scene();
+  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), .04).texture;
+  const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(4, 6, 6); scene.add(key);
+  const rim = new THREE.DirectionalLight(0xffffff, 1.4); rim.position.set(-6, 2, -5); scene.add(rim);
+  const cam = new THREE.PerspectiveCamera(fov, 1, .1, 100);
+  const s = { scene, cam, spin: 0, vel: 0, mx: 0, my: 0 };
+  const tick = build(s);
+
+  let drag = false, lx = 0;
+  canvas.addEventListener('pointerdown', e => { drag = true; lx = e.clientX; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e => { if (drag) { s.vel = (e.clientX - lx) * .006; lx = e.clientX; } });
+  canvas.addEventListener('pointerup', () => drag = false);
+  addEventListener('pointermove', e => { s.mx = e.clientX / innerWidth - .5; s.my = e.clientY / innerHeight - .5; });
+
+  function resize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
+    s.onResize && s.onResize(w, h);
+  }
+  new ResizeObserver(resize).observe(canvas); resize();
+
+  let on = true;
+  new IntersectionObserver(([e]) => on = e.isIntersecting).observe(canvas);
+  const clock = new THREE.Clock();
+  (function frame() {
+    requestAnimationFrame(frame);
+    if (!on) return;
+    const t = still ? 0 : clock.getElapsedTime();
+    s.spin += s.vel; s.vel *= .94;
+    tick(t);
+    renderer.render(scene, cam);
+  })();
+}
+
+/* ---------------- FILM CAMERA ---------------- */
+stage(document.getElementById('camGL'), 30, s => {
+  const leather = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: .85,
+    bumpMap: canvasTex(256, 256, (g, w, h) => {
+      g.fillStyle = '#808080'; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 2600; i++) { const v = 90 + Math.random() * 110 | 0; g.fillStyle = `rgb(${v},${v},${v})`; g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 1 + Math.random() * 2.5, 0, 7); g.fill(); }
+    }, { data: true, repeat: [3, 2] }), bumpScale: 2 });
+  const chrome = new THREE.MeshStandardMaterial({ color: 0xdedede, metalness: 1, roughness: .22 });
+  const satin = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, metalness: 1, roughness: .45 });
+  const black = new THREE.MeshStandardMaterial({ color: 0x0c0c0c, metalness: .3, roughness: .35 });
+  const glass = new THREE.MeshPhysicalMaterial({ color: 0x050505, metalness: .2, roughness: 0, clearcoat: 1, clearcoatRoughness: 0 });
+
+  const cam = new THREE.Group();
+  const add = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); cam.add(m); return m; };
+  const cyl = (r, h, seg = 48) => new THREE.CylinderGeometry(r, r, h, seg);
+
+  // body: leatherette lower, chrome top plate
+  add(new RoundedBoxGeometry(7, 2.7, 2.2, 6, .28), leather, 0, 0, 0);
+  add(new RoundedBoxGeometry(7.02, 1.1, 2.24, 6, .28), chrome, 0, 1.75, 0);
+  add(new RoundedBoxGeometry(7.04, .12, 2.26, 2, .05), black, 0, 1.25, 0);
+
+  // pentaprism with slanted faces
+  const ps = new THREE.Shape();
+  ps.moveTo(-1.05, 0); ps.lineTo(1.05, 0); ps.lineTo(.5, 1.25); ps.lineTo(-.5, 1.25); ps.closePath();
+  const prismGeo = new THREE.ExtrudeGeometry(ps, { depth: 2.5, bevelEnabled: true, bevelSize: .05, bevelThickness: .05, bevelSegments: 3 });
+  prismGeo.translate(0, 0, -1.25); prismGeo.rotateY(Math.PI / 2);
+  add(prismGeo, chrome, 0, 2.28, 0);
+  add(new THREE.BoxGeometry(.9, .14, .7), black, 0, 3.6, 0); // hot shoe
+  const label = add(new THREE.PlaneGeometry(1.7, .5), new THREE.MeshStandardMaterial({ transparent: true, roughness: .4, metalness: .6,
+    map: canvasTex(512, 150, (g, w, h) => { g.fillStyle = '#111'; g.font = '700 92px "Space Grotesk",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('NLC-35', w / 2, h / 2 + 4); }) }),
+    0, 2.95, .78);
+  label.rotation.x = -Math.atan2(.55, 1.25);
+
+  // lens
+  const lens = new THREE.Group(); lens.position.set(0, .05, 1.1); lens.rotation.x = Math.PI / 2; cam.add(lens);
+  const lpart = (geo, mat, y) => { const m = new THREE.Mesh(geo, mat); m.position.y = y; lens.add(m); return m; };
+  lpart(cyl(1.5, .3), chrome, .15);
+  lpart(cyl(1.32, 1.9), black, 1.25);
+  const grip = canvasTex(512, 64, (g, w, h) => { for (let x = 0; x < w; x += 8) { g.fillStyle = '#fff'; g.fillRect(x, 0, 4, h); g.fillStyle = '#000'; g.fillRect(x + 4, 0, 4, h); } }, { data: true });
+  lpart(cyl(1.42, .6, 96), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: .6, bumpMap: grip, bumpScale: 3 }), .9);
+  lpart(cyl(1.38, .22), satin, 1.75);
+  lpart(cyl(1.3, .2), chrome, 2.25);
+  const front = lpart(new THREE.RingGeometry(.92, 1.3, 96), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .5,
+    map: canvasTex(512, 512, (g, w, h) => {
+      g.fillStyle = '#0b0b0b'; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#e8e8e8'; g.font = '700 19px "JetBrains Mono",monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      const txt = 'NLC LENS  ·  50mm  1:1.8  ·  LOCAL-FIRST  ·  NO CLOUD  ·  ';
+      [...txt].forEach((ch, i) => { const a = -Math.PI / 2 + i / txt.length * Math.PI * 2; g.save(); g.translate(w / 2 + Math.cos(a) * 214, h / 2 + Math.sin(a) * 214); g.rotate(a + Math.PI / 2); g.fillText(ch, 0, 0); g.restore(); });
+    }) }), 2.351);
+  front.rotation.x = -Math.PI / 2; front.rotation.z = Math.PI;
+  const glassGeo = new THREE.SphereGeometry(1, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2.6);
+  const g1 = lpart(glassGeo, glass, 1.95); g1.scale.set(.95, .45, .95);
+
+  // controls on the top plate
+  add(cyl(.62, .32), satin, 1.6, 2.45, -.15);
+  const dial = add(new THREE.CircleGeometry(.62, 64), new THREE.MeshStandardMaterial({ metalness: .7, roughness: .35,
+    map: canvasTex(256, 256, (g, w, h) => {
+      g.fillStyle = '#bdbdbd'; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#111'; g.font = '700 22px "JetBrains Mono",monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      ['B', '1', '2', '4', '8', '15', '30', '60', '125', '250', '500', '1000'].forEach((n, i) => { const a = i / 12 * Math.PI * 2; g.fillText(n, w / 2 + Math.cos(a) * 92, h / 2 + Math.sin(a) * 92); });
+      g.beginPath(); g.arc(w / 2, h / 2, 40, 0, 7); g.fill();
+    }) }), 1.6, 2.615, -.15);
+  dial.rotation.x = -Math.PI / 2;
+  add(cyl(.22, .3), chrome, 2.6, 2.45, .45);
+  add(cyl(.12, .12), black, 2.6, 2.64, .45);
+  const lever = add(new RoundedBoxGeometry(1.8, .1, .34, 2, .04), chrome, 2.55, 2.65, -.5); lever.rotation.y = .5;
+  add(cyl(.5, .38), satin, -2.5, 2.48, 0);
+  add(cyl(.3, .3), chrome, -2.5, 2.8, 0);
+  [-1, 1].forEach(sx => { const lug = add(cyl(.14, .3), chrome, sx * 3.58, 1.5, 0); lug.rotation.z = Math.PI / 2; });
+  add(new RoundedBoxGeometry(.5, .8, .2, 2, .06), chrome, -2.2, .5, 1.12); // self-timer
+
+  cam.position.y = -.9;
+  const holder = new THREE.Group(); holder.add(cam); s.scene.add(holder);
+  s.cam.position.set(0, 1.2, 22); s.cam.lookAt(0, 0, 0);
+  s.onResize = (w, h) => {
+    const narrow = innerWidth < 760;
+    holder.scale.setScalar(narrow ? .78 : Math.min(1.15, w / h * .95));
+    holder.position.y = narrow ? 0 : 1.6;
+  };
+  s.spin = -.6;
+  return t => {
+    holder.rotation.y = s.spin + Math.sin(t * .4) * .25 + s.mx * .5;
+    holder.rotation.x = .18 + s.my * .25;
+    holder.rotation.z = Math.sin(t * .6) * .04;
+    cam.position.y = -.9 + Math.sin(t * .9) * .15;
+  };
+});
+
+/* ---------------- PLAYING CARDS ---------------- */
+stage(document.getElementById('cardGL'), 32, s => {
+  const W = 2.5, H = 3.5, R = .2;
+  const shape = new THREE.Shape();
+  shape.moveTo(-W / 2 + R, -H / 2); shape.lineTo(W / 2 - R, -H / 2); shape.quadraticCurveTo(W / 2, -H / 2, W / 2, -H / 2 + R);
+  shape.lineTo(W / 2, H / 2 - R); shape.quadraticCurveTo(W / 2, H / 2, W / 2 - R, H / 2);
+  shape.lineTo(-W / 2 + R, H / 2); shape.quadraticCurveTo(-W / 2, H / 2, -W / 2, H / 2 - R);
+  shape.lineTo(-W / 2, -H / 2 + R); shape.quadraticCurveTo(-W / 2, -H / 2, -W / 2 + R, -H / 2);
+  const face = new THREE.ShapeGeometry(shape, 8);
+  const uv = face.attributes.uv, pos = face.attributes.position;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / W + .5, pos.getY(i) / H + .5);
+  const backGeo = face.clone().rotateY(Math.PI);
+
+  const serif = 'Georgia,"Times New Roman",serif';
+  const cardFace = (rank, suit, centre) => canvasTex(500, 700, (g, w, h) => {
+    g.fillStyle = '#f2f0ea'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#111'; g.lineWidth = 3; g.strokeRect(22, 22, w - 44, h - 44);
+    g.fillStyle = '#111'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const corner = () => { g.font = `700 64px ${serif}`; g.fillText(rank, 62, 78); g.font = `56px ${serif}`; g.fillText(suit, 62, 138); };
+    corner(); g.save(); g.translate(w, h); g.rotate(Math.PI); corner(); g.restore();
+    centre(g, w, h);
+  });
+  const bigSuit = suit => (g, w, h) => { g.font = `330px ${serif}`; g.fillText(suit, w / 2, h / 2 + 20); };
+  const jokerC = (g, w, h) => {
+    g.font = `700 74px "Space Grotesk",sans-serif`; g.fillText('LYRIC', w / 2, h / 2 + 150);
+    g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 50 : 125; g.lineTo(w / 2 + Math.cos(a) * r, h / 2 - 40 + Math.sin(a) * r); } g.fill();
+  };
+  const back = canvasTex(500, 700, (g, w, h) => {
+    g.fillStyle = '#0d0d0d'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#e9e9e9'; g.lineWidth = 3; g.strokeRect(26, 26, w - 52, h - 52);
+    g.save(); g.beginPath(); g.rect(40, 40, w - 80, h - 80); g.clip(); g.lineWidth = 1.5;
+    for (let i = -h; i < w + h; i += 26) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + h, h); g.stroke(); g.beginPath(); g.moveTo(i, h); g.lineTo(i + h, 0); g.stroke(); }
+    g.restore();
+    g.fillStyle = '#0d0d0d'; g.beginPath(); g.arc(w / 2, h / 2, 92, 0, 7); g.fill(); g.stroke();
+    g.fillStyle = '#e9e9e9'; g.font = '700 58px "Space Grotesk",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('NLC', w / 2, h / 2 + 4);
+  });
+  const backMat = new THREE.MeshPhysicalMaterial({ map: back, roughness: .35, clearcoat: .7 });
+
+  const decks = [
+    cardFace('A', '♠', bigSuit('♠')),
+    cardFace('K', '♣', bigSuit('♣')),
+    cardFace('Q', '♠', bigSuit('♠')),
+    cardFace('★', '', jokerC),
+  ];
+  const fan = new THREE.Group(); s.scene.add(fan);
+  const pivots = decks.map((tex, i) => {
+    const p = new THREE.Group();
+    const c = new THREE.Group(); c.position.y = H / 2 - .3; c.position.z = i * .03;
+    c.add(new THREE.Mesh(face, new THREE.MeshPhysicalMaterial({ map: tex, roughness: .35, clearcoat: .7 })));
+    const b = new THREE.Mesh(backGeo, backMat); b.position.z = -.004; c.add(b);
+    p.add(c); fan.add(p); return p;
+  });
+  fan.position.y = -1.6;
+  s.cam.position.set(0, .8, 11); s.cam.lookAt(0, .9, 0);
+  s.onResize = (w, h) => fan.scale.setScalar(Math.min(1, w / h * .85));
+  return t => {
+    const open = .26 + Math.sin(t * .8) * .06 + Math.min(Math.abs(s.vel) * 2, .2);
+    pivots.forEach((p, i) => { p.rotation.z = (1.5 - i) * open; p.position.y = Math.sin(t * 1.2 + i) * .06; });
+    fan.rotation.y = s.spin + Math.sin(t * .5) * .35 + s.mx * .5;
+    fan.rotation.x = -.12 + s.my * .2;
+  };
+});
 </script>
 </body>
 </html>
