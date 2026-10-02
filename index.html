@@ -65,12 +65,26 @@ section{padding:clamp(5rem,12vh,9rem) var(--g);border-top:1px solid var(--line);
 /* about */
 .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,5rem);align-items:center}
 .about-grid .big{font-size:clamp(1.5rem,3vw,2.5rem);line-height:1.15;letter-spacing:-.02em}
-.about-grid .big em{font-style:normal;color:var(--dim)}
+.about-grid .body{color:var(--dim);font-size:clamp(1rem,1.3vw,1.15rem);max-width:52ch;margin-top:1.6rem}
 .facts{font-family:var(--mono);font-size:.82rem;margin-top:2.5rem}
 .facts div{display:flex;justify-content:space-between;gap:1rem;padding:.8rem 0;border-bottom:1px solid var(--line)}
 .facts span:first-child{color:var(--dim)}
 #cardGL{width:100%;height:clamp(380px,48vw,600px);display:block;cursor:grab;touch-action:pan-y}
 @media (max-width:820px){.about-grid{grid-template-columns:1fr}}
+
+/* hobbies */
+.hobbies{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line)}
+.hobbies>*{display:flex;flex-direction:column;gap:.7rem;padding:1.6rem 1.3rem;border-right:1px solid var(--line);min-height:250px;transition:background .4s var(--ease),color .4s var(--ease)}
+.hobbies>*:last-child{border-right:0}
+.hobbies .ico{width:38px;height:38px;transition:transform .5s var(--ease)}
+.hobbies h4{font-size:1.35rem;font-weight:500;letter-spacing:-.02em}
+.hobbies p{color:var(--dim);font-size:.9rem}
+.hobbies .go{margin-top:auto;font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em}
+.hobbies>*:hover{background:var(--fg);color:var(--bg)}
+.hobbies>*:hover p{color:var(--bg);opacity:.7}
+.hobbies>*:hover .ico{transform:rotate(-12deg) scale(1.1)}
+@media (max-width:1000px){.hobbies{grid-template-columns:1fr 1fr}.hobbies>*{border-bottom:1px solid var(--line);min-height:0}}
+@media (max-width:560px){.hobbies{grid-template-columns:1fr}.hobbies>*{border-right:0}}
 
 /* stack */
 .stack{display:grid;grid-template-columns:repeat(8,1fr);border:1px solid var(--line)}
@@ -119,6 +133,7 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
   <a href="#top">lyric.</a>
   <nav>
     <a href="#about">about</a>
+    <a href="#hobbies">hobbies</a>
     <a href="#stack">stack</a>
     <a href="#work">work</a>
     <a href="#contact">contact</a>
@@ -144,21 +159,32 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
   <div class="tag"><b>01</b><span>/ about me</span></div>
   <div class="about-grid">
     <div class="rv">
-      <p class="big">Artist, coder, martial artist, writer, reader. I build the tools I wanted to exist and couldn't find. <em>Local-first. No telemetry. No cloud.</em></p>
+      <p class="big">I'm Nabhan Lyric Chowdhury, a software developer, chess player, artist and writer based in Dhaka, Bangladesh.</p>
+      <p class="body">What started as a curiosity about art and computers grew into a dream, and then a profession, across media content, writing and code. Chasing that vision sharpened me as a writer, illustrator, programmer and chess player. Today I channel that energy into coding projects and writing books.</p>
       <div class="facts">
         <div><span>based in</span><span>Dhaka, Bangladesh</span></div>
         <div><span>handle</span><span>@Fs1lyric</span></div>
-        <div><span>writing</span><span>Ink Eye, a novel</span></div>
-        <div><span>off-screen</span><span>martial arts · chess · books</span></div>
-        <div><span>favourite show</span><span>Dexter, btw</span></div>
+        <div><span>does</span><span>code · write · draw · chess</span></div>
+        <div><span>currently writing</span><span>Ink Eye</span></div>
       </div>
     </div>
     <canvas id="cardGL" aria-label="3D playing cards, drag to fan"></canvas>
   </div>
 </section>
 
+<section id="hobbies">
+  <div class="tag"><b>02</b><span>/ hobbies</span></div>
+  <div class="hobbies rv">
+    <a href="https://www.chess.com/member/fs1lyric" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="20" cy="10" r="5"/><path d="M16 15h8l-2 11h-4z"/><path d="M12 34h16l-2-8H14z"/></svg><h4>Chess</h4><p>Long games, sharp openings, and enough hours in to write an engine of my own.</p><span class="go">chess.com ↗</span></a>
+    <a href="https://www.webnovel.com/book/ink-eye_36125155608860405" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M28 5l7 7-19 19-9 2 2-9z"/><path d="M24 9l7 7"/></svg><h4>Writing</h4><p>Fiction first. My novel Ink Eye is being serialised on WebNovel.</p><span class="go">read Ink Eye ↗</span></a>
+    <div><svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M20 4c1.5 9 7 14.5 16 16-9 1.5-14.5 7-16 16-1.5-9-7-14.5-16-16 9-1.5 14.5-7 16-16z"/></svg><h4>Illustration</h4><p>Ink, pencil and digital. Drawing is where most of my ideas start.</p></div>
+    <div><svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 16h32"/><path d="M4 22h32"/><rect x="16" y="13" width="8" height="12"/><path d="M18 25l-5 11M22 25l5 11"/></svg><h4>Martial arts</h4><p>Training keeps the head clear between long sessions at the desk.</p></div>
+    <a href="https://www.instagram.com/volksreader/" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M20 10c-5-3-11-3-16-1v23c5-2 11-2 16 1 5-3 11-3 16-1V9c-5-2-11-2-16 1z"/><path d="M20 10v23"/></svg><h4>Reading</h4><p>An unreasonable number of books. Some end up as reels on @volksreader.</p><span class="go">@volksreader ↗</span></a>
+  </div>
+</section>
+
 <section id="stack">
-  <div class="tag"><b>02</b><span>/ stack</span></div>
+  <div class="tag"><b>03</b><span>/ stack</span></div>
   <div class="stack rv">
     <div><img src="https://cdn.jsdelivr.net/npm/simple-icons@13/icons/rust.svg" alt=""><span>Rust</span></div>
     <div><img src="https://cdn.jsdelivr.net/npm/simple-icons@13/icons/typescript.svg" alt=""><span>TypeScript</span></div>
@@ -172,33 +198,22 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
 </section>
 
 <section id="work">
-  <div class="tag"><b>03</b><span>/ projects</span></div>
+  <div class="tag"><b>04</b><span>/ projects</span></div>
   <ul class="work rv">
     <li><a href="https://fs1lyric.github.io/odyssey-design/" target="_blank" rel="noopener">
       <span class="n">01</span>
       <div><h3>Odyssey Design</h3><p class="desc">A local-first desktop suite: documents, spreadsheets, decks and a multi-track video editor. The timeline compiles the whole project into one ffmpeg filter graph, so there are no intermediate renders.</p></div>
-      <span class="meta">Rust · Tauri · TS <span class="arrow">→</span></span></a></li>
-    <li><a href="https://fs1lyric.github.io/tokenmeter/" target="_blank" rel="noopener">
+      <span class="meta">Software · Rust · Tauri <span class="arrow">→</span></span></a></li>
+    <li><a href="https://www.webnovel.com/book/ink-eye_36125155608860405" target="_blank" rel="noopener">
       <span class="n">02</span>
-      <div><h3>tokenmeter</h3><p class="desc">Know where your LLM spend goes. A local proxy that attributes every token to a model, a repo and a branch, then fails CI when a pull request regresses cost.</p></div>
-      <span class="meta">TypeScript · CLI <span class="arrow">→</span></span></a></li>
-    <li><a href="https://github.com/Fs1lyric/chess-engine-1600" target="_blank" rel="noopener">
-      <span class="n">03</span>
-      <div><h3>chess-engine-1600</h3><p class="desc">A ~1600 ELO engine with a GUI board, move analysis and recommendations. Built for minimal hardware, with no server round-trip.</p></div>
-      <span class="meta">Engine · GUI <span class="arrow">→</span></span></a></li>
-    <li><a href="https://github.com/Fs1lyric/nexus-video-editor" target="_blank" rel="noopener">
-      <span class="n">04</span>
-      <div><h3>Nexus</h3><p class="desc">Single-track video editor, CLI and egui GUI, wrapping ffmpeg for trim, arrange and export. The small predecessor to Odyssey's timeline.</p></div>
-      <span class="meta">Rust · egui <span class="arrow">→</span></span></a></li>
-    <li><a href="https://github.com/Fs1lyric/flowerisy" target="_blank" rel="noopener">
-      <span class="n">05</span>
-      <div><h3>flowerisy</h3><p class="desc">Pomodoro timer and to-do list that stays in your browser.</p></div>
-      <span class="meta">JavaScript <span class="arrow">→</span></span></a></li>
+      <div><h3>Ink Eye</h3><p class="desc">My novel, serialised chapter by chapter on WebNovel and still being written.</p></div>
+      <span class="meta">Novel · WebNovel <span class="arrow">→</span></span></a></li>
   </ul>
+
 </section>
 
 <section class="contact" id="contact">
-  <div class="tag"><b>04</b><span>/ contact me</span></div>
+  <div class="tag"><b>05</b><span>/ contact me</span></div>
   <h2 class="rv"><a href="mailto:fs.lyric@proton.me">say<br>hello ↗</a></h2>
   <div class="links rv">
     <a href="mailto:fs.lyric@proton.me">fs.lyric@proton.me</a>
@@ -429,19 +444,15 @@ stage(document.getElementById('cardGL'), 32, s => {
   for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / W + .5, pos.getY(i) / H + .5);
   const backGeo = face.clone().rotateY(Math.PI);
 
-  const serif = 'Georgia,"Times New Roman",serif';
-  const cardFace = (rank, suit, centre) => canvasTex(500, 700, (g, w, h) => {
-    g.fillStyle = '#f2f0ea'; g.fillRect(0, 0, w, h);
-    g.strokeStyle = '#111'; g.lineWidth = 3; g.strokeRect(22, 22, w - 44, h - 44);
-    g.fillStyle = '#111'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    const corner = () => { g.font = `700 64px ${serif}`; g.fillText(rank, 62, 78); g.font = `56px ${serif}`; g.fillText(suit, 62, 138); };
-    corner(); g.save(); g.translate(w, h); g.rotate(Math.PI); corner(); g.restore();
-    centre(g, w, h);
-  });
-  const bigSuit = suit => (g, w, h) => { g.font = `330px ${serif}`; g.fillText(suit, w / 2, h / 2 + 20); };
-  const jokerC = (g, w, h) => {
-    g.font = `700 74px "Space Grotesk",sans-serif`; g.fillText('LYRIC', w / 2, h / 2 + 150);
-    g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 50 : 125; g.lineTo(w / 2 + Math.cos(a) * r, h / 2 - 40 + Math.sin(a) * r); } g.fill();
+  // Real card faces (cardsJS, MIT), drawn in greyscale to match the page.
+  const realCard = code => {
+    const c = document.createElement('canvas'); c.width = 672; c.height = 938;
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    img.onload = () => { g.filter = 'grayscale(1) contrast(1.15)'; g.drawImage(img, 0, 0, c.width, c.height); t.needsUpdate = true; };
+    img.src = `https://cdn.jsdelivr.net/npm/cardsJS@1.1.1/cards/${code}.svg`;
+    return t;
   };
   const back = canvasTex(500, 700, (g, w, h) => {
     g.fillStyle = '#0d0d0d'; g.fillRect(0, 0, w, h);
@@ -454,12 +465,7 @@ stage(document.getElementById('cardGL'), 32, s => {
   });
   const backMat = new THREE.MeshPhysicalMaterial({ map: back, roughness: .35, clearcoat: .7 });
 
-  const decks = [
-    cardFace('A', '♠', bigSuit('♠')),
-    cardFace('K', '♣', bigSuit('♣')),
-    cardFace('Q', '♠', bigSuit('♠')),
-    cardFace('★', '', jokerC),
-  ];
+  const decks = ['JD', 'QS', 'KH', 'AS'].map(realCard);
   const fan = new THREE.Group(); s.scene.add(fan);
   const pivots = decks.map((tex, i) => {
     const p = new THREE.Group();
@@ -469,7 +475,7 @@ stage(document.getElementById('cardGL'), 32, s => {
     p.add(c); fan.add(p); return p;
   });
   fan.position.y = -1.6;
-  s.cam.position.set(0, .8, 11); s.cam.lookAt(0, .9, 0);
+  s.cam.position.set(0, .4, 12); s.cam.lookAt(0, .2, 0);
   s.onResize = (w, h) => fan.scale.setScalar(Math.min(1, w / h * .85));
   return t => {
     const open = .26 + Math.sin(t * .8) * .06 + Math.min(Math.abs(s.vel) * 2, .2);
