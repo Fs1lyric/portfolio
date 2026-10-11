@@ -86,6 +86,15 @@ section{padding:clamp(5rem,12vh,9rem) var(--g);border-top:1px solid var(--line);
 @media (max-width:1000px){.hobbies{grid-template-columns:1fr 1fr}.hobbies>*{border-bottom:1px solid var(--line);min-height:0}}
 @media (max-width:560px){.hobbies{grid-template-columns:1fr}.hobbies>*{border-right:0}}
 
+/* classified: the cursor redacts whatever it passes over */
+.file{font-size:clamp(1.4rem,3.2vw,2.6rem);line-height:1.35;letter-spacing:-.01em;max-width:28ch;cursor:crosshair;user-select:none;touch-action:pan-y}
+r-w{position:relative;display:inline-block}
+r-w::after{content:'';position:absolute;inset:.1em -.08em;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .35s var(--ease);pointer-events:none}
+r-w.x::after{transform:scaleX(1);transform-origin:left;transition-duration:.12s}
+.hero h1 .o r-w::after{background:var(--fg)}
+.file-meta{font-family:var(--mono);font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-top:2.5rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){r-w::after{transition:none}}
+
 /* stack */
 .stack{display:grid;grid-template-columns:repeat(8,1fr);border:1px solid var(--line)}
 .stack div{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:2rem .5rem;border-right:1px solid var(--line);transition:background .3s}
@@ -151,7 +160,7 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
   </h1>
   <div class="row">
     <p>I write software that runs on your machine and stays there. Mostly Rust and TypeScript, mostly desktop.</p>
-    <div class="type" id="type"></div>
+    <div class="type" id="type" data-noredact></div>
   </div>
 </section>
 
@@ -181,6 +190,12 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
     <div><svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 16h32"/><path d="M4 22h32"/><rect x="16" y="13" width="8" height="12"/><path d="M18 25l-5 11M22 25l5 11"/></svg><h4>Martial arts</h4><p>Training keeps the head clear between long sessions at the desk.</p></div>
     <a href="https://www.instagram.com/volksreader/" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M20 10c-5-3-11-3-16-1v23c5-2 11-2 16 1 5-3 11-3 16-1V9c-5-2-11-2-16 1z"/><path d="M20 10v23"/></svg><h4>Reading</h4><p>An unreasonable number of books. Some end up as reels on @volksreader.</p><span class="go">@volksreader ↗</span></a>
   </div>
+</section>
+
+<section id="classified">
+  <div class="tag"><b>//</b><span>/ classified</span></div>
+  <p class="file rv" id="file">Subject is based in Dhaka. Subject writes desktop tools in Rust and refuses to ship telemetry. Subject is building a chess engine nobody asked for, serialising a novel called Ink Eye, and drawing in the margins of both. Subject trains martial arts to stay sane and reads an unreasonable number of books.</p>
+  <div class="file-meta"><span>move your cursor anywhere on the page</span><span id="redacted" data-noredact>0 words redacted</span></div>
 </section>
 
 <section id="stack">
@@ -278,6 +293,60 @@ let li = 0, ci = 0, del = false;
 
 const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add('in')), { threshold: .12 });
 document.querySelectorAll('.rv').forEach(n => io.observe(n));
+
+// censorship: every word on the page is wrapped; the cursor redacts each one it touches, which then fades back
+const tally = document.getElementById('redacted'), skip = 'script,style,svg,canvas,noscript,[data-noredact]';
+const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+  acceptNode: n => n.data.trim() && !n.parentElement.closest(skip) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+});
+const texts = [];
+while (walker.nextNode()) texts.push(walker.currentNode);
+for (const t of texts) {
+  // one wrapper per text node, so flex/grid parents still see a single item
+  const wrap = document.createElement('r-t');
+  for (const part of t.data.split(/(\s+)/)) {
+    if (!part) continue;
+    if (/^\s+$/.test(part)) { wrap.append(part); continue; }
+    const w = document.createElement('r-w');
+    w.textContent = part;
+    wrap.append(w);
+  }
+  t.replaceWith(wrap);
+}
+// words under pointer-events:none (the hero title) never reach elementFromPoint, so hit-test them by box
+const ghosts = [...document.querySelectorAll('r-w')].filter(w => getComputedStyle(w).pointerEvents === 'none');
+const timers = new Map();
+let redacted = 0;
+function redact(w) {
+  if (!w.classList.contains('x')) {
+    w.classList.add('x');
+    tally.textContent = `${++redacted} word${redacted === 1 ? '' : 's'} redacted`;
+  }
+  clearTimeout(timers.get(w));
+  timers.set(w, setTimeout(() => w.classList.remove('x'), 2200));
+}
+function hit(x, y) {
+  const w = document.elementFromPoint(x, y)?.closest('r-w');
+  if (w) return redact(w);
+  for (const g of ghosts) {
+    const r = g.getBoundingClientRect();
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return redact(g);
+  }
+}
+// pointermove fires once per frame, so a fast flick jumps whole words; walk the path in small steps.
+// The path only breaks when the cursor leaves the window or a finger lifts.
+let last = null;
+function trace(x, y) {
+  const steps = last ? Math.min(60, Math.ceil(Math.hypot(x - last[0], y - last[1]) / 8)) : 0;
+  for (let i = 1; i <= steps; i++) hit(last[0] + (x - last[0]) * i / steps, last[1] + (y - last[1]) * i / steps);
+  if (!steps) hit(x, y);
+  last = [x, y];
+}
+document.addEventListener('pointermove', e => { if (e.pointerType !== 'touch') trace(e.clientX, e.clientY); }, { passive: true });
+// touch: pointer events stop once the browser starts scrolling, touchmove keeps firing, so a swipe censors as it scrolls
+document.addEventListener('touchmove', e => trace(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+document.addEventListener('touchend', () => { last = null; }, { passive: true });
+document.addEventListener('mouseout', e => { if (!e.relatedTarget) last = null; });
 </script>
 
 <script type="importmap">
