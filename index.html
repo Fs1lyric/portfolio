@@ -88,7 +88,7 @@ section{padding:clamp(5rem,12vh,9rem) var(--g);border-top:1px solid var(--line);
 
 /* censor: the cursor leaves grid-snapped tiles that blur whatever is behind them into chunky blocks */
 #censor{position:absolute;left:0;top:0;width:100%;height:0;pointer-events:none;z-index:100}
-#censor i{position:absolute;width:var(--t);height:var(--t);-webkit-backdrop-filter:blur(calc(var(--t) / 2.2)) saturate(1.2);backdrop-filter:blur(calc(var(--t) / 2.2)) saturate(1.2);transition:opacity .6s var(--ease)}
+#censor i{position:absolute;width:var(--t);height:var(--t);-webkit-backdrop-filter:blur(calc(var(--t) / 2.2)) saturate(1.2);backdrop-filter:blur(calc(var(--t) / 2.2)) saturate(1.2);background:color-mix(in srgb,var(--fg) 7%,transparent);box-shadow:inset 0 0 0 .5px color-mix(in srgb,var(--fg) 10%,transparent);transition:opacity .6s var(--ease)}
 #censor i.out{opacity:0}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#censor i{background:var(--fg);opacity:.9}}
 @media (prefers-reduced-motion:reduce){#censor i{transition:none}}
