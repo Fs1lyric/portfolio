@@ -453,45 +453,101 @@ function canvasTex(w, h, draw, opts = {}) {
   return t;
 }
 
+// Low-end machines get one device pixel, no AA, no shadows, fewer instances and 30 fps.
+const low = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 || !!navigator.connection?.saveData;
+
 // One renderer per canvas; renders only while on screen, with drag-to-spin.
-function stage(canvas, fov, build) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// Under reduced motion it draws a still frame (time frozen at 0) and redraws only on drag.
+function stage(canvas, fov, build, opts = {}) {
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: !low, alpha: true, powerPreference: 'low-power' });
+  } catch (e) { return opts.onFail ? opts.onFail() : canvas.remove(); }
+  let pr = low ? 1 : Math.min(devicePixelRatio, 2);
+  renderer.setPixelRatio(pr);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   const scene = new THREE.Scene();
-  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), .04).texture;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture; pmrem.dispose();
   const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(4, 6, 6); scene.add(key);
   const rim = new THREE.DirectionalLight(0xffffff, 1.4); rim.position.set(-6, 2, -5); scene.add(rim);
   const cam = new THREE.PerspectiveCamera(fov, 1, .1, 100);
-  const s = { scene, cam, spin: 0, vel: 0, mx: 0, my: 0 };
+  const s = { scene, cam, renderer, key, rim, low, still, spin: 0, vel: 0, mx: 0, my: 0 };
   const tick = build(s);
+  canvas.dataset.gl = 'on';
 
-  let drag = false, lx = 0;
-  canvas.addEventListener('pointerdown', e => { drag = true; lx = e.clientX; canvas.setPointerCapture(e.pointerId); });
-  canvas.addEventListener('pointermove', e => { if (drag) { s.vel = (e.clientX - lx) * .006; lx = e.clientX; } });
+  let dirty = true;
+  let drag = false, lx = 0, moved = 0;
+  canvas.addEventListener('pointerdown', e => { drag = true; moved = 0; lx = e.clientX; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e => { if (drag) { s.vel = (e.clientX - lx) * .006; moved += Math.abs(e.clientX - lx); lx = e.clientX; } });
   canvas.addEventListener('pointerup', () => drag = false);
-  addEventListener('pointermove', e => { s.mx = e.clientX / innerWidth - .5; s.my = e.clientY / innerHeight - .5; });
+  canvas.addEventListener('pointercancel', () => drag = false);
+  // A drag on a model inside a project row must not open the row's link.
+  canvas.addEventListener('click', e => { if (moved > 4) { e.preventDefault(); e.stopPropagation(); } }, true);
+  addEventListener('pointermove', e => { s.mx = e.clientX / innerWidth - .5; s.my = e.clientY / innerHeight - .5; if (on) dirty = true; }, { passive: true });
 
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;
     renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
     s.onResize && s.onResize(w, h);
+    dirty = true;
   }
   new ResizeObserver(resize).observe(canvas); resize();
 
-  let on = true;
-  new IntersectionObserver(([e]) => on = e.isIntersecting).observe(canvas);
+  let on = true, lost = false;
+  new IntersectionObserver(([e]) => { on = e.isIntersecting; dirty = true; }).observe(canvas);
+  canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); lost = true; });
+  canvas.addEventListener('webglcontextrestored', () => { lost = false; dirty = true; });
+
   const clock = new THREE.Clock();
-  (function frame() {
+  const minDt = low || opts.small ? 1 / 31 : 0;
+  let last = 0, slow = 0, frames = 0;
+  (function frame(now) {
     requestAnimationFrame(frame);
-    if (!on) return;
+    if (!on || lost) return;
+    now = (now || 0) / 1000;
+    const dt = now - last;
+    if (dt < minDt) return;
+    if (still && !dirty && Math.abs(s.vel) < 1e-4 && dt < .5) return; // texture loads still land within .5s
+    last = now;
+    // Adaptive quality: if frames keep running long, drop resolution once.
+    if (!still && pr > 1 && dt < .25) { frames++; if (dt > .028) slow++; if (frames === 90) { if (slow > 45) { pr = 1; renderer.setPixelRatio(pr); resize(); } frames = slow = 0; } }
     const t = still ? 0 : clock.getElapsedTime();
     s.spin += s.vel; s.vel *= .94;
     tick(t);
     renderer.render(scene, cam);
+    dirty = false;
   })();
 }
+
+// Build a stage only once its canvas comes near the viewport, in idle time, so scrolling stays smooth.
+function lazyStage(canvas, fov, build, opts) {
+  if (!canvas) return;
+  const idle = window.requestIdleCallback || (f => setTimeout(f, 60));
+  const io = new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) return;
+    io.disconnect();
+    idle(() => stage(canvas, fov, build, opts), { timeout: 600 });
+  }, { rootMargin: '250px 0px' });
+  io.observe(canvas);
+}
+
+// Soft round glow sprite used for electrons, spikes and flashes.
+let glowTex;
+function glow(size, opacity = 1) {
+  glowTex ||= canvasTex(128, 128, (g, w, h) => {
+    const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.25, 'rgba(255,255,255,.55)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, w, h);
+  });
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity }));
+  sp.scale.setScalar(size);
+  return sp;
+}
+const ease = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
+const seeded = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
 /* ---------------- FILM CAMERA ---------------- */
 stage(document.getElementById('camGL'), 30, s => {
@@ -582,7 +638,7 @@ stage(document.getElementById('camGL'), 30, s => {
 });
 
 /* ---------------- PLAYING CARDS ---------------- */
-stage(document.getElementById('cardGL'), 32, s => {
+lazyStage(document.getElementById('cardGL'), 32, s => {
   const W = 2.5, H = 3.5, R = .2;
   const shape = new THREE.Shape();
   shape.moveTo(-W / 2 + R, -H / 2); shape.lineTo(W / 2 - R, -H / 2); shape.quadraticCurveTo(W / 2, -H / 2, W / 2, -H / 2 + R);
@@ -634,6 +690,93 @@ stage(document.getElementById('cardGL'), 32, s => {
     fan.rotation.x = -.12 + s.my * .2;
   };
 });
+
+/* ---------------- ATOMSIM: U-235 nucleus, neutron capture and fission ---------------- */
+lazyStage(document.querySelector('canvas.pgl[data-model="atom"]'), 30, s => {
+  const N = s.low ? 140 : 235, Z = Math.round(N * 92 / 235), r0 = .23;
+  const Rn = r0 * Math.cbrt(N / .62);
+  const rnd = seeded(235);
+  // Nucleons packed in a ball: Fibonacci directions, cube-root radii, a little jitter.
+  const base = [], golden = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < N; i++) {
+    const y = 1 - 2 * (i + .5) / N, rr = Math.sqrt(1 - y * y), th = i * golden;
+    const r = Rn * Math.cbrt((i + .5) / N) * (.94 + rnd() * .1);
+    base.push(new THREE.Vector3(Math.cos(th) * rr * r, y * r, Math.sin(th) * rr * r));
+  }
+  const kinds = base.map((_, i) => i); for (let i = N - 1; i > 0; i--) { const j = rnd() * (i + 1) | 0; [kinds[i], kinds[j]] = [kinds[j], kinds[i]]; }
+  const isP = new Set(kinds.slice(0, Z));
+  const geo = new THREE.IcosahedronGeometry(r0, s.low ? 2 : 3);
+  const pMat = new THREE.MeshPhysicalMaterial({ color: 0xf4f4f4, metalness: 1, roughness: .16, clearcoat: 1, clearcoatRoughness: .05 });
+  const nMat = new THREE.MeshPhysicalMaterial({ color: 0x161616, metalness: .35, roughness: .22, clearcoat: 1, clearcoatRoughness: .08 });
+  const pMesh = new THREE.InstancedMesh(geo, pMat, Z), nMesh = new THREE.InstancedMesh(geo, nMat, N - Z);
+  const slot = base.map((_, i) => isP.has(i) ? ['p', 0] : ['n', 0]);
+  { let a = 0, b = 0; slot.forEach(sl => sl[1] = sl[0] === 'p' ? a++ : b++); }
+  // Which fragment each nucleon ends up in: split by a tilted plane so halves are uneven (like Ba + Kr).
+  const side = base.map(v => v.x + v.y * .25 > Rn * .12 ? 1 : -1);
+  const atom = new THREE.Group(); atom.add(pMesh, nMesh); s.scene.add(atom);
+
+  // Electron shells: hairline orbits, glowing electrons with fading trails.
+  const orbits = [[3.1, .35, .2], [3.6, -.6, 1.1], [4.1, 1.1, -.5]].map(([r, tx, tz], k) => {
+    const g = new THREE.Group(); g.rotation.set(tx, 0, tz); atom.add(g);
+    g.add(new THREE.Mesh(new THREE.TorusGeometry(r, .006, 6, 220), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .22 })));
+    const n = 48, pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) col.set([1 - i / n, 1 - i / n, 1 - i / n].map(c => c * c), i * 3);
+    const tg = new THREE.BufferGeometry();
+    tg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); tg.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.add(new THREE.Line(tg, new THREE.LineBasicMaterial({ vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false })));
+    const e = new THREE.Mesh(new THREE.SphereGeometry(.07, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    e.add(glow(.75, .9)); g.add(e);
+    return { r, e, pos, tg, speed: 1.3 - k * .25, phase: k * 2.1 };
+  });
+
+  // The incoming neutron and the fast neutrons the split throws off.
+  const fast = [0, 1, 2, 3].map(() => { const m = new THREE.Mesh(geo, nMat); m.add(glow(.9, .7)); m.visible = false; atom.add(m); return m; });
+  const dirs = [new THREE.Vector3(.2, 1, .3), new THREE.Vector3(-.4, -1, .5), new THREE.Vector3(.1, .2, -1)].map(v => v.normalize());
+  const flash = glow(Rn * 5, 0); atom.add(flash);
+  const light = new THREE.PointLight(0xffffff, 0, 12, 1.5); atom.add(light);
+
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3(), sc = new THREE.Vector3();
+  const fragQ = [new THREE.Quaternion(), new THREE.Quaternion()], axis = new THREE.Vector3(0, 0, 1);
+  s.cam.position.set(0, 0, 15); s.cam.lookAt(0, 0, 0);
+  s.onResize = (w, h) => atom.scale.setScalar(Math.min(1.25, w / h * .62));
+  const T = 10; // seconds per cycle
+  return t => {
+    const c = t % T;
+    // Phases: idle -> neutron arrives (2.2-3.4) -> neck forms (3.4-4.3) -> split (4.3-7) -> drift home (7.6-9.6)
+    const neck = ease((c - 3.4) / .9), split = ease((c - 4.3) / 1.6) * (1 - ease((c - 7.6) / 2));
+    const wob = Math.sin(t * 2.3) * .025;
+    fragQ[0].setFromAxisAngle(axis, split * .9); fragQ[1].setFromAxisAngle(axis, -split * .7);
+    for (let i = 0; i < N; i++) {
+      const b = base[i], sd = side[i];
+      v.copy(b);
+      v.x = b.x * (1 + .35 * neck * (1 - split)) + sd * Rn * .42 * neck * (1 - split);
+      v.y *= 1 - .14 * neck * (1 - split); v.z *= 1 - .14 * neck * (1 - split);
+      v.multiplyScalar(1 + wob * Math.sin(i));
+      if (split > 0) { v.applyQuaternion(fragQ[sd > 0 ? 0 : 1]); v.x += sd * split * (sd > 0 ? 2.4 : 2.9); v.y += split * sd * .5; }
+      m4.compose(v, q, sc.copy(one));
+      const [k, j] = slot[i];
+      (k === 'p' ? pMesh : nMesh).setMatrixAt(j, m4);
+    }
+    pMesh.instanceMatrix.needsUpdate = nMesh.instanceMatrix.needsUpdate = true;
+
+    const inc = (c - 2.2) / 1.2;
+    fast[0].visible = inc > 0 && inc < 1;
+    if (fast[0].visible) fast[0].position.set(-7 + 7 * inc, 1.2 * (1 - inc), 0);
+    const out = (c - 4.4) / 1.6;
+    for (let k = 1; k < 4; k++) { fast[k].visible = out > 0 && out < 1; fast[k].position.copy(dirs[k - 1]).multiplyScalar(Rn + out * 7); }
+    const burst = Math.max(0, 1 - Math.abs(c - 4.4) / .5);
+    flash.material.opacity = burst * .9; light.intensity = burst * 60;
+
+    for (const o of orbits) {
+      const a = t * o.speed + o.phase;
+      o.e.position.set(Math.cos(a) * o.r, Math.sin(a) * o.r, 0);
+      for (let i = 0; i < 48; i++) { const b = a - i * .045; o.pos.set([Math.cos(b) * o.r, Math.sin(b) * o.r, 0], i * 3); }
+      o.tg.attributes.position.needsUpdate = true;
+    }
+    atom.rotation.y = s.spin + t * .15 + s.mx * .4;
+    atom.rotation.x = .25 + s.my * .3;
+  };
+}, { small: true });
 </script>
 </body>
 </html>
