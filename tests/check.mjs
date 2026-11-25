@@ -56,6 +56,20 @@ function watch(page) {
   const hrefs = await page.$$eval('a[href]', as => as.map(a => a.href));
   ok(!hrefs.some(h => /github\.com\/Fs1lyric\/(calendio|flowday|tradedesk)/i.test(h)), 'no links to private repos (calendio, flowday, tradedesk)');
   ok(hrefs.some(h => /github\.com\/Fs1lyric\/tokenmeter/.test(h)), 'tokenmeter is still linked');
+  const SITES = {
+    Calendio: 'https://calendio-app.netlify.app', Flowday: 'https://flowday-linux.netlify.app',
+    tradedesk: 'https://tradedesk-desk.netlify.app', SolidCAD: 'https://solidcad-app.netlify.app',
+  };
+  for (const [name, site] of Object.entries(SITES)) {
+    const href = await page.$eval(`.work h3:text-is("${name}")`, h => h.closest('a').getAttribute('href')).catch(() => null);
+    ok(href && href.replace(/\/$/, '') === site, `${name} row links to its site (${href})`);
+  }
+  for (const name of ['Calendio', 'Flowday', 'tradedesk']) {
+    const shot = page.locator(`.work a:has(h3:text-is("${name}")) img.pshot`);
+    await shot.scrollIntoViewIfNeeded();
+    const w = await shot.evaluate(img => img.decode().then(() => img.naturalWidth)).catch(() => 0);
+    ok(w > 0, `${name} row shows its screenshot`);
+  }
 
   for (const m of MODELS) ok(await page.$(`canvas.pgl[data-model="${m}"]`), `${m}: canvas present`);
   const early = await page.$$eval('canvas.pgl[data-gl]', cs => cs.map(c => c.dataset.model));
