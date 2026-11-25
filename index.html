@@ -864,8 +864,8 @@ lazyStage(document.querySelector('canvas.pgl[data-model="neuron"]'), 30, s => {
   const spikeLight = s.low ? null : new THREE.PointLight(0xffffff, 0, 2.5, 2); if (spikeLight) cell.add(spikeLight);
   const fans = ends.map(() => { const g = glow(.38, 0); cell.add(g); return g; });
   const T = 3.2;
-  s.cam.position.set(0, .4, 13); s.cam.lookAt(.2, 0, 0);
-  s.onResize = (w, h) => cell.scale.setScalar(Math.min(1.15, w / h * .55));
+  s.cam.position.set(-.3, .5, 13); s.cam.lookAt(-.3, .3, 0);
+  s.onResize = (w, h) => cell.scale.setScalar(Math.min(1, w / h * .46));
   return t => {
     const c = t % T;
     for (const inp of inputs) { const u = 1 - ((c / T * 1.4 + inp.off) % 1); inp.curve.getPointAt(u, inp.g.position); inp.g.material.opacity = Math.sin(u * Math.PI) * .9; }
@@ -950,11 +950,11 @@ lazyStage(document.querySelector('canvas.pgl[data-model="cad"]'), 30, s => {
   corners.forEach(([x, y]) => { const b = part(boltGeo, dark, -1.62, -3.4); b.position.x = x; b.position.y = y; });
 
   // Faint drafting grid under the assembly.
-  const grid = new THREE.GridHelper(14, 28, 0x9a9a9a, 0x9a9a9a); grid.material.transparent = true; grid.material.opacity = .14; grid.position.y = -2.1; s.scene.add(grid);
+  const grid = new THREE.GridHelper(7, 14, 0x9a9a9a, 0x9a9a9a); grid.material.transparent = true; grid.material.opacity = .08; grid.position.y = -2.1; s.scene.add(grid);
 
   asm.rotation.set(.35, -1.05, 0);
   s.cam.position.set(0, 1.3, 15); s.cam.lookAt(0, -.2, 0);
-  s.onResize = (w, h) => { const k = Math.min(1.1, w / h * .5); asm.scale.setScalar(k); grid.scale.setScalar(k); };
+  s.onResize = (w, h) => { const k = Math.min(1.5, w / h * .72); asm.scale.setScalar(k); grid.scale.setScalar(k); };
   const T = 9;
   return t => {
     const c = t % T, e = ease((c - 1.8) / 1.6) * (1 - ease((c - 6) / 1.6));

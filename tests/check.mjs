@@ -29,7 +29,10 @@ async function inked(page, png) {
     const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
     const g = c.getContext('2d'); g.drawImage(img, 0, 0);
     const d = g.getImageData(0, 0, c.width, c.height).data;
-    let n = 0; const [r, gg, b] = d;
+    // Background = the most common colour, so a model touching a corner cannot skew it.
+    const hist = new Map(); for (let i = 0; i < d.length; i += 4) { const k = d[i] >> 3 << 10 | d[i + 1] >> 3 << 5 | d[i + 2] >> 3; hist.set(k, (hist.get(k) || 0) + 1); }
+    const top = [...hist].sort((x, y) => y[1] - x[1])[0][0], r = (top >> 10 & 31) << 3, gg = (top >> 5 & 31) << 3, b = (top & 31) << 3;
+    let n = 0;
     for (let i = 0; i < d.length; i += 4) if (Math.abs(d[i] - r) + Math.abs(d[i + 1] - gg) + Math.abs(d[i + 2] - b) > 40) n++;
     return n / (d.length / 4);
   }, png.toString('base64'));
@@ -126,11 +129,13 @@ function watch(page) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = watch(page);
   await page.goto(url, { waitUntil: 'networkidle' });
-  await page.locator('#work').scrollIntoViewIfNeeded();
-  await page.waitForTimeout(1500);
+  for (const m of MODELS) { await page.locator(`canvas.pgl[data-model="${m}"]`).scrollIntoViewIfNeeded().catch(() => {}); await page.waitForTimeout(700); }
+  await page.waitForTimeout(800);
   ok(await page.$$eval('canvas.pgl', cs => cs.length) === 0, 'no WebGL: project canvases removed');
   await page.locator('#work').screenshot({ path: 'shots/work-nogl.png' });
-  ok(errors.length === 0, `no WebGL: no page errors${errors.length ? ': ' + errors.join(' | ') : ''}`);
+  // three.js itself logs why it could not create a context; that is expected here, anything else is not.
+  const real = errors.filter(e => !/WebGL context could not be created/.test(e));
+  ok(real.length === 0, `no WebGL: no page errors${real.length ? ': ' + real.join(' | ') : ''}`);
   await browser.close();
 }
 
