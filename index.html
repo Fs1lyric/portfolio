@@ -117,6 +117,10 @@ body.inv .stack img{filter:none}
 .work .arrow{display:inline-block;transition:transform .5s var(--ease)}
 .work a:hover .arrow{transform:rotate(-45deg)}
 @media (max-width:640px){.work a{grid-template-columns:2.2rem 1fr}.work .meta{grid-column:2;text-align:left}}
+.work a.has3d{grid-template-columns:3.5rem 1fr clamp(180px,24vw,340px) auto}
+.pgl{display:block;width:100%;height:clamp(160px,15vw,230px);align-self:center;touch-action:pan-y;cursor:grab}
+.pgl:active{cursor:grabbing}
+@media (max-width:640px){.work a.has3d{grid-template-columns:2.2rem 1fr}.pgl{grid-column:2;height:min(64vw,260px)}}
 
 /* contact */
 .contact h2{font-size:clamp(3.5rem,13vw,11rem);line-height:.85;letter-spacing:-.06em;font-weight:700}
@@ -220,13 +224,15 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
       <span class="n">03</span>
       <div><h3>Calendio</h3><p class="desc">The calendar I plan every day in. Local-first time blocking and a booking page, written in pure Rust with egui.</p></div>
       <span class="meta">Software · Rust · egui · Private</span></a></li>
-    <li><a href="https://github.com/Fs1lyric/atomsim" target="_blank" rel="noopener">
+    <li><a class="has3d" href="https://github.com/Fs1lyric/atomsim" target="_blank" rel="noopener">
       <span class="n">04</span>
       <div><h3>atomsim</h3><p class="desc">Atoms, nuclear fission and chain reactions simulated from measured nuclear data (AME2020, ENDF/B-VIII.0), checked against experiment, with a raylib visualiser.</p></div>
+      <canvas class="pgl" data-model="atom" aria-label="3D uranium-235 nucleus splitting, drag to rotate"></canvas>
       <span class="meta">Simulation · C++ <span class="arrow">→</span></span></a></li>
-    <li><a href="https://github.com/Fs1lyric/openbrain" target="_blank" rel="noopener">
+    <li><a class="has3d" href="https://github.com/Fs1lyric/openbrain" target="_blank" rel="noopener">
       <span class="n">05</span>
       <div><h3>openbrain</h3><p class="desc">An open-source spiking brain simulator: biophysical neurons in Rust with Python tooling on top.</p></div>
+      <canvas class="pgl" data-model="neuron" aria-label="3D neuron firing along a myelinated axon, drag to rotate"></canvas>
       <span class="meta">Simulation · Rust · Python <span class="arrow">→</span></span></a></li>
     <li><a>
       <span class="n">06</span>
@@ -248,9 +254,10 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
       <span class="n">10</span>
       <div><h3>Margin</h3><p class="desc">A word processor that runs in the browser, built to feel like Word.</p></div>
       <span class="meta">Software · React · TipTap · Private</span></a></li>
-    <li><a>
+    <li><a class="has3d">
       <span class="n">11</span>
       <div><h3>SolidCAD</h3><p class="desc">A SolidWorks-style CAD app built on the FreeCAD kernel.</p></div>
+      <canvas class="pgl" data-model="cad" aria-label="3D exploded gear and bearing assembly, drag to rotate"></canvas>
       <span class="meta">Software · Python · FreeCAD · Private</span></a></li>
     <li><a>
       <span class="n">12</span>
@@ -284,9 +291,10 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
       <span class="n">19</span>
       <div><h3>Heart disease model</h3><p class="desc">A heart disease prediction demo, trained end to end in GitHub Actions.</p></div>
       <span class="meta">ML · Python · Private</span></a></li>
-    <li><a href="https://github.com/Fs1lyric/chess-engine-1600" target="_blank" rel="noopener">
+    <li><a class="has3d" href="https://github.com/Fs1lyric/chess-engine-1600" target="_blank" rel="noopener">
       <span class="n">20</span>
       <div><h3>chess-engine-1600</h3><p class="desc">A lightweight ~1600 Elo chess engine with a board, move analysis and recommendations.</p></div>
+      <canvas class="pgl" data-model="chess" aria-label="3D chess pieces on a marble board, drag to rotate"></canvas>
       <span class="meta">Engine · Chess <span class="arrow">→</span></span></a></li>
     <li><a href="https://github.com/Fs1lyric/nexus-video-editor" target="_blank" rel="noopener">
       <span class="n">21</span>
