@@ -964,6 +964,78 @@ lazyStage(document.querySelector('canvas.pgl[data-model="cad"]'), 30, s => {
     asm.rotation.x = .35 + s.my * .2;
   };
 }, { small: true });
+
+/* ---------------- CHESS-ENGINE-1600: turned pieces on a marble board ---------------- */
+lazyStage(document.querySelector('canvas.pgl[data-model="chess"]'), 28, s => {
+  const seg = s.low ? 48 : 128;
+  if (!s.low) {
+    s.renderer.shadowMap.enabled = true; s.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    s.key.castShadow = true; s.key.shadow.mapSize.set(1024, 1024); s.key.shadow.bias = -.0004; s.key.shadow.normalBias = .02;
+    Object.assign(s.key.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 1, far: 25 });
+  }
+  const marble = (bgc, vein, seed) => canvasTex(512, 512, (g, w, h) => {
+    const rnd = seeded(seed);
+    g.fillStyle = bgc; g.fillRect(0, 0, w, h);
+    g.filter = 'blur(1.5px)';
+    for (let k = 0; k < 14; k++) {
+      g.strokeStyle = vein; g.globalAlpha = .15 + rnd() * .35; g.lineWidth = .6 + rnd() * 2.4;
+      g.beginPath(); let x = rnd() * w, y = 0; g.moveTo(x, y);
+      while (y < h) { x += (rnd() - .45) * 60; y += 20 + rnd() * 40; g.lineTo(x, y); }
+      g.stroke();
+    }
+    g.globalAlpha = 1; g.filter = 'none';
+  });
+  const light = new THREE.MeshPhysicalMaterial({ map: marble('#e7e7e7', '#6d6d6d', 3), roughness: .12, clearcoat: 1, clearcoatRoughness: .04 });
+  const darkSq = new THREE.MeshPhysicalMaterial({ map: marble('#202020', '#8a8a8a', 9), roughness: .14, clearcoat: 1, clearcoatRoughness: .04 });
+  const frame = new THREE.MeshPhysicalMaterial({ color: 0x0e0e0e, roughness: .3, metalness: .2, clearcoat: 1 });
+  const ivory = new THREE.MeshPhysicalMaterial({ color: 0xeeeeee, roughness: .2, clearcoat: 1, clearcoatRoughness: .05, sheen: .6, sheenColor: 0xffffff });
+  const ebony = new THREE.MeshPhysicalMaterial({ color: 0x0b0b0b, roughness: .16, metalness: .1, clearcoat: 1, clearcoatRoughness: .03 });
+  const felt = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 1 });
+
+  const set = new THREE.Group(); s.scene.add(set);
+  const shadowed = m => { m.castShadow = m.receiveShadow = true; return m; };
+  const S = .9, n = 4;
+  const base = shadowed(new THREE.Mesh(new RoundedBoxGeometry(S * n + .5, .32, S * n + .5, 4, .06), frame)); base.position.y = -.2; set.add(base);
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    const sq = shadowed(new THREE.Mesh(new RoundedBoxGeometry(S - .015, .08, S - .015, 2, .01), (i + j) % 2 ? darkSq : light));
+    sq.position.set((i - n / 2 + .5) * S, 0, (j - n / 2 + .5) * S); set.add(sq);
+  }
+
+  // Lathe profiles as (radius, height) control points, smoothed by a spline so curves stay round.
+  const turn = (pts, mat, h = 1) => {
+    const curve = new THREE.SplineCurve(pts.map(([r, y]) => new THREE.Vector2(r, y * h)));
+    const g = new THREE.Group();
+    g.add(shadowed(new THREE.Mesh(new THREE.LatheGeometry(curve.getPoints(s.low ? 90 : 200), seg), mat)));
+    g.add(shadowed(new THREE.Mesh(new THREE.CylinderGeometry(pts[1][0] * .96, pts[1][0] * .96, .012, seg), felt)));
+    return g;
+  };
+  const foot = [[0, 0], [.36, 0], [.37, .02], [.37, .06], [.34, .085], [.35, .11], [.33, .14], [.28, .17], [.29, .2], [.25, .23]];
+  const king = turn([...foot, [.2, .3], [.16, .5], [.14, .75], [.135, .95], [.22, 1.0], [.23, 1.03], [.21, 1.06], [.16, 1.08], [.14, 1.12], [.2, 1.3], [.23, 1.4], [.22, 1.44], [.13, 1.48], [.09, 1.5], [.0, 1.51]], ebony);
+  const cross = new THREE.Shape(), a = .035, b = .11;
+  [[-a, 0], [a, 0], [a, b], [b, b], [b, b + 2 * a], [a, b + 2 * a], [a, b + 2 * a + .09], [-a, b + 2 * a + .09], [-a, b + 2 * a], [-b, b + 2 * a], [-b, b], [-a, b]].forEach(([x, y], i) => i ? cross.lineTo(x, y) : cross.moveTo(x, y));
+  const cg = new THREE.ExtrudeGeometry(cross, { depth: .05, bevelEnabled: true, bevelSize: .012, bevelThickness: .012, bevelSegments: 3, curveSegments: 4 }); cg.translate(0, 1.49, -.025);
+  king.add(shadowed(new THREE.Mesh(cg, ebony)));
+
+  const queen = turn([...foot, [.19, .3], [.15, .5], [.12, .78], [.11, .9], [.2, .95], [.21, .98], [.18, 1.0], [.13, 1.03], [.12, 1.07], [.2, 1.27], [.22, 1.3], [.14, 1.33], [.0, 1.31]], ivory);
+  for (let k = 0; k < 9; k++) { const t = k / 9 * Math.PI * 2, m = shadowed(new THREE.Mesh(new THREE.SphereGeometry(.04, 20, 14), ivory)); m.position.set(Math.cos(t) * .2, 1.34, Math.sin(t) * .2); queen.add(m); }
+  const qb = shadowed(new THREE.Mesh(new THREE.SphereGeometry(.07, 28, 20), ivory)); qb.position.y = 1.42; queen.add(qb);
+
+  const pawnPts = [...foot.slice(0, 8), [.24, .2], [.18, .24], [.15, .32], [.12, .45], [.19, .5], [.19, .53], [.12, .56], [.0, .56]];
+  const pawn = turn(pawnPts, ivory); const ph = shadowed(new THREE.Mesh(new THREE.SphereGeometry(.15, 40, 28), ivory)); ph.position.y = .68; pawn.add(ph);
+  const fallen = turn(pawnPts, ebony); const fh = shadowed(new THREE.Mesh(new THREE.SphereGeometry(.15, 40, 28), ebony)); fh.position.y = .68; fallen.add(fh);
+
+  const at = (p, i, j, sc = 1) => { p.position.set((i - n / 2 + .5) * S, .04, (j - n / 2 + .5) * S); p.scale.setScalar(sc); set.add(p); return p; };
+  at(king, 1, 1, 1.15); at(queen, 2, 2, 1.1); at(pawn, 0, 3, 1.05);
+  at(fallen, 3, 0, 1.05); fallen.rotation.set(0, .6, Math.PI / 2 - .06); fallen.position.y = .04 + .36 * 1.05;
+
+  s.cam.position.set(0, 4.6, 10); s.cam.lookAt(0, .7, 0);
+  s.onResize = (w, h) => set.scale.setScalar(Math.min(1.25, w / h * .62));
+  return t => {
+    king.rotation.z = Math.sin(t * 1.1) * .02; // the king wobbles: it knows
+    set.rotation.y = s.spin + t * .18 + s.mx * .4;
+    set.rotation.x = s.my * .12;
+  };
+}, { small: true });
 </script>
 </body>
 </html>
