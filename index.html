@@ -1085,8 +1085,9 @@ lazyStage(document.querySelector('canvas.pgl[data-model="chess"]'), 28, s => {
   at(king, 1, 1, 1.15); at(queen, 2, 2, 1.1); at(pawn, 0, 3, 1.05);
   at(fallen, 3, 0, 1.05); fallen.rotation.set(0, .6, Math.PI / 2); fallen.position.y = .04 + .3 * 1.05;
 
-  s.cam.position.set(0, 4.6, 10); s.cam.lookAt(0, .7, 0);
-  s.onResize = (w, h) => set.scale.setScalar(Math.min(1.25, w / h * .62));
+  s.cam.position.set(0, 3.8, 10); s.cam.lookAt(0, .75, 0);
+  s.rim.intensity = 3.2; // catch the edges of the ebony pieces against the dark page
+  s.onResize = (w, h) => set.scale.setScalar(Math.min(1.6, w / h * .82));
   return t => {
     king.rotation.z = Math.sin(t * 1.1) * .02; // the king wobbles: it knows
     set.rotation.y = s.spin + t * .18 + s.mx * .4;
