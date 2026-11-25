@@ -881,6 +881,89 @@ lazyStage(document.querySelector('canvas.pgl[data-model="neuron"]'), 30, s => {
     cell.rotation.x = .1 + s.my * .25;
   };
 }, { small: true });
+
+/* ---------------- SOLIDCAD: gear, shaft, bearings and housing in an exploded view ---------------- */
+lazyStage(document.querySelector('canvas.pgl[data-model="cad"]'), 30, s => {
+  const seg = s.low ? 48 : 96;
+  const brushed = canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = '#808080'; g.fillRect(0, 0, w, h);
+    for (let r = 2; r < w * .72; r += 1.5) { const v = 110 + Math.random() * 40 | 0; g.strokeStyle = `rgb(${v},${v},${v})`; g.lineWidth = 1; g.beginPath(); g.arc(w / 2, h / 2, r, 0, 7); g.stroke(); }
+  }, { data: true });
+  const steel = new THREE.MeshPhysicalMaterial({ color: 0xd4d4d4, metalness: 1, roughness: .3, bumpMap: brushed, bumpScale: .4, clearcoat: .3 });
+  const dark = new THREE.MeshPhysicalMaterial({ color: 0x2a2a2a, metalness: .9, roughness: .38, clearcoat: .6 });
+  const anod = new THREE.MeshPhysicalMaterial({ color: 0x5a5a5a, metalness: .8, roughness: .5 });
+  const edgeMat = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: .55 });
+  const asm = new THREE.Group(); s.scene.add(asm);
+  const parts = [];
+  // Every part gets crisp CAD edge lines and a direction it travels when the assembly explodes.
+  const part = (geo, mat, z, dz, children = []) => {
+    const g = new THREE.Group(), m = new THREE.Mesh(geo, mat);
+    g.add(m, new THREE.LineSegments(new THREE.EdgesGeometry(geo, 28), edgeMat), ...children);
+    g.position.z = z; asm.add(g); parts.push({ g, z, dz }); return g;
+  };
+  const circle = (r, x = 0, y = 0, n = seg) => { const p = new THREE.Path(); p.absarc(x, y, r, 0, Math.PI * 2, true); return p; };
+  const extrude = (shape, depth, bevel = .025) => { const g = new THREE.ExtrudeGeometry(shape, { depth, curveSegments: s.low ? 24 : 48, bevelEnabled: true, bevelSize: bevel, bevelThickness: bevel, bevelSegments: 2 }); g.translate(0, 0, -depth / 2); return g; };
+
+  // Spur gear: 28 teeth with rounded tips, thick rim, thin web with lightening holes, raised hub with keyed bore.
+  const teeth = 28, ra = 1.62, rf = 1.42, rim = 1.22, hub = .48, bore = .22;
+  const gs = new THREE.Shape(), step = Math.PI * 2 / teeth;
+  for (let i = 0; i < teeth; i++) {
+    const a = i * step, p = [[rf, a], [rf, a + step * .22], [ra, a + step * .36], [ra, a + step * .64], [rf, a + step * .78]];
+    p.forEach(([r, b], k) => (i === 0 && k === 0 ? gs.moveTo : gs.lineTo).call(gs, Math.cos(b) * r, Math.sin(b) * r));
+  }
+  gs.closePath(); gs.holes.push(circle(rim));
+  const web = new THREE.Shape(); web.absarc(0, 0, rim + .02, 0, Math.PI * 2, false); web.holes.push(circle(hub - .02));
+  for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; web.holes.push(circle(.2, Math.cos(a) * .86, Math.sin(a) * .86)); }
+  const hb = new THREE.Shape(); hb.absarc(0, 0, hub, 0, Math.PI * 2, false);
+  const kb = new THREE.Path(); kb.moveTo(-.06, -bore); kb.lineTo(-.06, bore + .07); kb.lineTo(.06, bore + .07); kb.lineTo(.06, -bore); kb.absarc(0, 0, bore, -Math.PI / 2 + .27, -Math.PI / 2 - .27, true); hb.holes.push(circle(bore));
+  const gear = part(extrude(gs, .42, .02), steel, 0, 0, [
+    new THREE.Mesh(extrude(web, .16, .01), steel),
+    new THREE.Mesh(extrude(hb, .7, .03), steel),
+  ]);
+
+  // Shaft: stepped, chamfered, with a key.
+  const prof = [[0, -2.6], [.17, -2.6], [.2, -2.57], [.2, -1.25], [.22, -1.2], [.22, 1.2], [.2, 1.25], [.2, 2.1], [.15, 2.15], [.15, 2.6], [.12, 2.64], [0, 2.64]].map(([r, y]) => new THREE.Vector2(r, y));
+  const sh = new THREE.LatheGeometry(prof, seg); sh.rotateX(Math.PI / 2);
+  const key = new THREE.Mesh(new RoundedBoxGeometry(.11, .1, .66, 2, .02), dark); key.position.y = .24;
+  part(sh, steel, 0, 0, [key]);
+
+  // Deep-groove ball bearings either side of the gear.
+  const bearing = z => {
+    const ring = (ri, ro, w) => { const p = new THREE.Shape(); p.absarc(0, 0, ro, 0, Math.PI * 2, false); p.holes.push(circle(ri)); return extrude(p, w, .015); };
+    const balls = new THREE.InstancedMesh(new THREE.SphereGeometry(.075, 20, 14), new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: .08 }), 9);
+    const m4 = new THREE.Matrix4();
+    for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; balls.setMatrixAt(i, m4.makeTranslation(Math.cos(a) * .37, Math.sin(a) * .37, 0)); }
+    const outer = new THREE.Mesh(ring(.45, .6, .26), steel), cage = new THREE.Mesh(ring(.33, .41, .2), dark);
+    return part(ring(.22, .3, .26), steel, z, Math.sign(z) * 1.25, [outer, cage, balls]);
+  };
+  bearing(-.75); bearing(.75);
+
+  // Housing plate with counterbored holes, and four hex bolts.
+  const ps = new THREE.Shape(), W = 1.6, H = 1.6, R = .3;
+  ps.moveTo(-W + R, -H); ps.lineTo(W - R, -H); ps.quadraticCurveTo(W, -H, W, -H + R); ps.lineTo(W, H - R); ps.quadraticCurveTo(W, H, W - R, H);
+  ps.lineTo(-W + R, H); ps.quadraticCurveTo(-W, H, -W, H - R); ps.lineTo(-W, -H + R); ps.quadraticCurveTo(-W, -H, -W + R, -H);
+  ps.holes.push(circle(.62));
+  const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([x, y]) => [x * (W - .32), y * (H - .32)]);
+  corners.forEach(([x, y]) => ps.holes.push(circle(.1, x, y, 24)));
+  part(extrude(ps, .3, .04), anod, -1.25, -2.1);
+  const boltGeo = mergeGeometries([new THREE.CylinderGeometry(.17, .17, .16, 6).rotateX(Math.PI / 2).translate(0, 0, -.08).toNonIndexed(), new THREE.CylinderGeometry(.085, .085, .7, 20).rotateX(Math.PI / 2).translate(0, 0, .35).toNonIndexed()]);
+  corners.forEach(([x, y]) => { const b = part(boltGeo, dark, -1.62, -3.4); b.position.x = x; b.position.y = y; });
+
+  // Faint drafting grid under the assembly.
+  const grid = new THREE.GridHelper(14, 28, 0x9a9a9a, 0x9a9a9a); grid.material.transparent = true; grid.material.opacity = .14; grid.position.y = -2.1; s.scene.add(grid);
+
+  asm.rotation.set(.35, -1.05, 0);
+  s.cam.position.set(0, 1.3, 15); s.cam.lookAt(0, -.2, 0);
+  s.onResize = (w, h) => { const k = Math.min(1.1, w / h * .5); asm.scale.setScalar(k); grid.scale.setScalar(k); };
+  const T = 9;
+  return t => {
+    const c = t % T, e = ease((c - 1.8) / 1.6) * (1 - ease((c - 6) / 1.6));
+    for (const p of parts) p.g.position.z = p.z + p.dz * e;
+    gear.rotation.z = t * .35;
+    asm.rotation.y = -1.05 + s.spin + Math.sin(t * .3) * .3 + s.mx * .4;
+    asm.rotation.x = .35 + s.my * .2;
+  };
+}, { small: true });
 </script>
 </body>
 </html>
