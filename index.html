@@ -118,9 +118,11 @@ body.inv .stack img{filter:none}
 .work a:hover .arrow{transform:rotate(-45deg)}
 @media (max-width:640px){.work a{grid-template-columns:2.2rem 1fr}.work .meta{grid-column:2;text-align:left}}
 .work a.has3d{grid-template-columns:3.5rem 1fr clamp(180px,24vw,340px) auto}
+.work a.hasshot{grid-template-columns:3.5rem 1fr clamp(180px,24vw,340px) auto}
+.pshot{display:block;width:100%;height:auto;aspect-ratio:1180/780;object-fit:cover;align-self:center;border:1px solid var(--line)}
 .pgl{display:block;width:100%;height:clamp(160px,15vw,230px);align-self:center;touch-action:pan-y;cursor:grab}
 .pgl:active{cursor:grabbing}
-@media (max-width:640px){.work a.has3d{grid-template-columns:2.2rem 1fr}.pgl{grid-column:2;height:min(64vw,260px)}}
+@media (max-width:640px){.work a.hasshot{grid-template-columns:2.2rem 1fr}.pshot{grid-column:2}.work a.has3d{grid-template-columns:2.2rem 1fr}.pgl{grid-column:2;height:min(64vw,260px)}}
 
 /* contact */
 .contact h2{font-size:clamp(3.5rem,13vw,11rem);line-height:.85;letter-spacing:-.06em;font-weight:700}
@@ -220,10 +222,11 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
       <span class="n">02</span>
       <div><h3>Fluidity</h3><p class="desc">My own Omarchy-style Arch + Hyprland desktop: one installer, fluidity-* commands, liquid-glass Quickshell islands, 49 themes and a macOS mode, all driven from the keyboard.</p></div>
       <span class="meta">Desktop · QML · Shell <span class="arrow">→</span></span></a></li>
-    <li><a>
+    <li><a class="hasshot" href="https://calendio-app.netlify.app" target="_blank" rel="noopener">
       <span class="n">03</span>
       <div><h3>Calendio</h3><p class="desc">The calendar I plan every day in. Local-first time blocking and a booking page, written in pure Rust with egui.</p></div>
-      <span class="meta">Software · Rust · egui · Private</span></a></li>
+      <img class="pshot" src="img/calendio.jpg" alt="Calendio's week view" width="680" height="450" loading="lazy">
+      <span class="meta">Software · Rust · egui · Download <span class="arrow">→</span></span></a></li>
     <li><a class="has3d" href="https://github.com/Fs1lyric/atomsim" target="_blank" rel="noopener">
       <span class="n">04</span>
       <div><h3>atomsim</h3><p class="desc">Atoms, nuclear fission and chain reactions simulated from measured nuclear data (AME2020, ENDF/B-VIII.0), checked against experiment, with a raylib visualiser.</p></div>
@@ -234,18 +237,20 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
       <div><h3>openbrain</h3><p class="desc">An open-source spiking brain simulator: biophysical neurons in Rust with Python tooling on top.</p></div>
       <canvas class="pgl" data-model="neuron" aria-label="3D neuron firing along a myelinated axon, drag to rotate"></canvas>
       <span class="meta">Simulation · Rust · Python <span class="arrow">→</span></span></a></li>
-    <li><a>
+    <li><a class="hasshot" href="https://tradedesk-desk.netlify.app" target="_blank" rel="noopener">
       <span class="n">06</span>
       <div><h3>tradedesk</h3><p class="desc">A news-aware trading assistant that reads the headlines alongside the charts.</p></div>
-      <span class="meta">Software · Python · Private</span></a></li>
+      <img class="pshot" src="img/tradedesk.jpg" alt="The tradedesk dashboard" width="680" height="450" loading="lazy">
+      <span class="meta">Software · Python · Showcase <span class="arrow">→</span></span></a></li>
     <li><a href="https://github.com/Fs1lyric/tokenmeter" target="_blank" rel="noopener">
       <span class="n">07</span>
       <div><h3>tokenmeter</h3><p class="desc">A local proxy that attributes every LLM token to a model, repo and branch, and fails CI on cost regressions.</p></div>
       <span class="meta">Tool · TypeScript <span class="arrow">→</span></span></a></li>
-    <li><a>
+    <li><a class="hasshot" href="https://flowday-linux.netlify.app" target="_blank" rel="noopener">
       <span class="n">08</span>
       <div><h3>Flowday</h3><p class="desc">An Akiflow-style planner with Claude built in: inbox, tasks and a day timeline in one window.</p></div>
-      <span class="meta">Software · Rust · egui · Private</span></a></li>
+      <img class="pshot" src="img/flowday.jpg" alt="Flowday's Today view" width="680" height="450" loading="lazy">
+      <span class="meta">Software · Rust · egui · Download <span class="arrow">→</span></span></a></li>
     <li><a>
       <span class="n">09</span>
       <div><h3>Burrow</h3><p class="desc">A macOS Finder for Linux, matched against the real Finder down to its menus and frames.</p></div>
@@ -254,11 +259,11 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
       <span class="n">10</span>
       <div><h3>Margin</h3><p class="desc">A word processor that runs in the browser, built to feel like Word.</p></div>
       <span class="meta">Software · React · TipTap · Private</span></a></li>
-    <li><a class="has3d">
+    <li><a class="has3d" href="https://solidcad-app.netlify.app" target="_blank" rel="noopener">
       <span class="n">11</span>
       <div><h3>SolidCAD</h3><p class="desc">A SolidWorks-style CAD app built on the FreeCAD kernel.</p></div>
       <canvas class="pgl" data-model="cad" aria-label="3D exploded gear and bearing assembly, drag to rotate"></canvas>
-      <span class="meta">Software · Python · FreeCAD · Private</span></a></li>
+      <span class="meta">Software · Python · FreeCAD · Download <span class="arrow">→</span></span></a></li>
     <li><a>
       <span class="n">12</span>
       <div><h3>duo</h3><p class="desc">A local chat app that routes each message between Claude Code and Codex.</p></div>
