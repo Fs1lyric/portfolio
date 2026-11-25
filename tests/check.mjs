@@ -64,12 +64,6 @@ function watch(page) {
     const href = await page.$eval(`.work h3:text-is("${name}")`, h => h.closest('a').getAttribute('href')).catch(() => null);
     ok(href && href.replace(/\/$/, '') === site, `${name} row links to its site (${href})`);
   }
-  for (const name of ['Calendio', 'Flowday', 'tradedesk']) {
-    const shot = page.locator(`.work a:has(h3:text-is("${name}")) img.pshot`);
-    await shot.scrollIntoViewIfNeeded();
-    const w = await shot.evaluate(img => img.decode().then(() => img.naturalWidth)).catch(() => 0);
-    ok(w > 0, `${name} row shows its screenshot`);
-  }
 
   for (const m of MODELS) ok(await page.$(`canvas.pgl[data-model="${m}"]`), `${m}: canvas present`);
   const early = await page.$$eval('canvas.pgl[data-gl]', cs => cs.map(c => c.dataset.model));
@@ -84,6 +78,12 @@ function watch(page) {
     const png = await el.screenshot({ path: `shots/${m}.png` });
     const share = await inked(page, png);
     ok(share > 0.03, `${m}: renders a model (${(share * 100).toFixed(1)}% inked)`);
+  }
+  for (const name of ['Calendio', 'Flowday', 'tradedesk']) {
+    const shot = page.locator(`.work a:has(h3:text-is("${name}")) img.pshot`);
+    await shot.scrollIntoViewIfNeeded();
+    const w = await shot.evaluate(img => img.decode().then(() => img.naturalWidth)).catch(() => 0);
+    ok(w > 0, `${name} row shows its screenshot`);
   }
   await page.locator('#work').screenshot({ path: 'shots/work-desktop.png' });
 
