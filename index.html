@@ -294,7 +294,7 @@ footer{padding:2rem var(--g);font-family:var(--mono);font-size:.7rem;color:var(-
     <li><a class="has3d" href="https://github.com/Fs1lyric/chess-engine-1600" target="_blank" rel="noopener">
       <span class="n">20</span>
       <div><h3>chess-engine-1600</h3><p class="desc">A lightweight ~1600 Elo chess engine with a board, move analysis and recommendations.</p></div>
-      <canvas class="pgl" data-model="chess" aria-label="3D chess pieces on a marble board, drag to rotate"></canvas>
+      <canvas class="pgl" data-model="chess" aria-label="3D gothic chess set on a marble board, drag to rotate"></canvas>
       <span class="meta">Engine · Chess <span class="arrow">→</span></span></a></li>
     <li><a href="https://github.com/Fs1lyric/nexus-video-editor" target="_blank" rel="noopener">
       <span class="n">21</span>
@@ -965,7 +965,7 @@ lazyStage(document.querySelector('canvas.pgl[data-model="cad"]'), 30, s => {
   };
 }, { small: true });
 
-/* ---------------- CHESS-ENGINE-1600: turned pieces on a marble board ---------------- */
+/* ---------------- CHESS-ENGINE-1600: gothic pieces on a marble board ---------------- */
 lazyStage(document.querySelector('canvas.pgl[data-model="chess"]'), 28, s => {
   const seg = s.low ? 48 : 128;
   if (!s.low) {
@@ -1001,32 +1001,89 @@ lazyStage(document.querySelector('canvas.pgl[data-model="chess"]'), 28, s => {
     sq.position.set((i - n / 2 + .5) * S, 0, (j - n / 2 + .5) * S); set.add(sq);
   }
 
-  // Lathe profiles as (radius, height) control points, smoothed by a spline so curves stay round.
-  const turn = (pts, mat, h = 1) => {
-    const curve = new THREE.SplineCurve(pts.map(([r, y]) => new THREE.Vector2(r, y * h)));
-    const g = new THREE.Group();
-    g.add(shadowed(new THREE.Mesh(new THREE.LatheGeometry(curve.getPoints(s.low ? 90 : 200), seg), mat)));
-    g.add(shadowed(new THREE.Mesh(new THREE.CylinderGeometry(pts[1][0] * .96, pts[1][0] * .96, .012, seg), felt)));
-    return g;
+  // Gothic pieces: octagonal faceted towers, lancet windows, pinnacled ledges, crocketed spires.
+  const ivoryF = ivory.clone(), ebonyF = ebony.clone(); ivoryF.flatShading = ebonyF.flatShading = true;
+  const silver = new THREE.MeshPhysicalMaterial({ color: 0x9a9a9a, metalness: 1, roughness: .28 });
+  const inkInset = new THREE.MeshPhysicalMaterial({ color: 0x141414, roughness: .5, metalness: .2 });
+  const R8 = Math.PI / 8;
+  const lancet = (w, h) => { const p = new THREE.Shape(); p.moveTo(-w / 2, 0); p.lineTo(-w / 2, h); p.quadraticCurveTo(-w / 2, h + w * .62, 0, h + w * .98); p.quadraticCurveTo(w / 2, h + w * .62, w / 2, h); p.lineTo(w / 2, 0); return p; };
+  const piece = (mat) => {
+    const g = new THREE.Group(), flat = mat === ivory ? ivoryF : ebonyF, inset = mat === ivory ? inkInset : silver;
+    const add = (geo, m, y = 0) => { const o = shadowed(new THREE.Mesh(geo, m)); o.position.y = y; g.add(o); return o; };
+    const oct = (r0, r1, y0, y1) => add(new THREE.CylinderGeometry(r1, r0, y1 - y0, 8), flat, (y0 + y1) / 2);
+    const plinth = (pts) => add(new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), 8), flat);
+    // A lancet window on each of the eight faces.
+    const windows = (r, y, w, h) => {
+      const geo = new THREE.ExtrudeGeometry(lancet(w, h), { depth: .012, bevelEnabled: false, curveSegments: 6 });
+      for (let k = 0; k < 8; k++) { const f = k * Math.PI / 4 + R8, ap = r * Math.cos(R8); const m = add(geo, inset, y); m.position.x = Math.sin(f) * ap; m.position.z = Math.cos(f) * ap; m.rotation.y = f; }
+    };
+    const pinnacles = (r, y, h) => {
+      for (let k = 0; k < 8; k++) {
+        const f = k * Math.PI / 4, x = Math.sin(f) * r, z = Math.cos(f) * r;
+        const p = add(new THREE.CylinderGeometry(.016, .016, h * .55, 8), flat, y + h * .275); p.position.x = x; p.position.z = z;
+        const c = add(new THREE.ConeGeometry(.026, h * .5, 8), flat, y + h * .8); c.position.x = x; c.position.z = z;
+        const b = add(new THREE.SphereGeometry(.011, 10, 8), mat, y + h * 1.06); b.position.x = x; b.position.z = z;
+      }
+    };
+    // Spire with crockets climbing its eight arrises.
+    const spire = (r, y, h, crockets) => {
+      add(new THREE.ConeGeometry(r, h, 8), flat, y + h / 2);
+      for (let k = 0; k < 8; k++) for (let i = 1; i <= crockets; i++) {
+        const u = i / (crockets + 1), f = k * Math.PI / 4, rr = r * (1 - u) + .012;
+        const c = add(new THREE.SphereGeometry(.016 * (1.1 - u * .5), 8, 6), mat, y + h * u); c.position.x = Math.sin(f) * rr; c.position.z = Math.cos(f) * rr;
+      }
+    };
+    return { g, add, oct, plinth, windows, pinnacles, spire, flat };
   };
-  const foot = [[0, 0], [.36, 0], [.37, .02], [.37, .06], [.34, .085], [.35, .11], [.33, .14], [.28, .17], [.29, .2], [.25, .23]];
-  const king = turn([...foot, [.2, .3], [.16, .5], [.14, .75], [.135, .95], [.22, 1.0], [.23, 1.03], [.21, 1.06], [.16, 1.08], [.14, 1.12], [.2, 1.3], [.23, 1.4], [.22, 1.44], [.13, 1.48], [.09, 1.5], [.0, 1.51]], ebony);
-  const cross = new THREE.Shape(), a = .035, b = .11;
-  [[-a, 0], [a, 0], [a, b], [b, b], [b, b + 2 * a], [a, b + 2 * a], [a, b + 2 * a + .09], [-a, b + 2 * a + .09], [-a, b + 2 * a], [-b, b + 2 * a], [-b, b], [-a, b]].forEach(([x, y], i) => i ? cross.lineTo(x, y) : cross.moveTo(x, y));
-  const cg = new THREE.ExtrudeGeometry(cross, { depth: .05, bevelEnabled: true, bevelSize: .012, bevelThickness: .012, bevelSegments: 3, curveSegments: 4 }); cg.translate(0, 1.49, -.025);
-  king.add(shadowed(new THREE.Mesh(cg, ebony)));
+  const plinthPts = (r) => [[0, 0], [r, 0], [r, .06], [r * .88, .075], [r * .88, .13], [r * .75, .16], [r * .75, .2], [0, .2]];
+  const felt2 = (g, r) => { const f = new THREE.Mesh(new THREE.CylinderGeometry(r, r, .012, 8), felt); f.position.y = -.004; g.add(f); };
 
-  const queen = turn([...foot, [.19, .3], [.15, .5], [.12, .78], [.11, .9], [.2, .95], [.21, .98], [.18, 1.0], [.13, 1.03], [.12, 1.07], [.2, 1.27], [.22, 1.3], [.14, 1.33], [.0, 1.31]], ivory);
-  for (let k = 0; k < 9; k++) { const t = k / 9 * Math.PI * 2, m = shadowed(new THREE.Mesh(new THREE.SphereGeometry(.04, 20, 14), ivory)); m.position.set(Math.cos(t) * .2, 1.34, Math.sin(t) * .2); queen.add(m); }
-  const qb = shadowed(new THREE.Mesh(new THREE.SphereGeometry(.07, 28, 20), ivory)); qb.position.y = 1.42; queen.add(qb);
+  const K = piece(ebony);
+  K.plinth(plinthPts(.38)); K.oct(.2, .165, .2, .9); K.windows(.183, .4, .07, .2);
+  K.oct(.27, .27, .9, .96); K.pinnacles(.235, .96, .17);
+  K.oct(.15, .15, .96, 1.18); K.windows(.15, 1.0, .048, .09);
+  K.oct(.2, .2, 1.18, 1.22); K.spire(.17, 1.22, .42, 4);
+  const kc = new THREE.Shape(), a = .022, b = .075;
+  [[-a, 0], [a, 0], [a, b], [b, b], [b, b + 2 * a], [a, b + 2 * a], [a, b + 2 * a + .07], [-a, b + 2 * a + .07], [-a, b + 2 * a], [-b, b + 2 * a], [-b, b], [-a, b]].forEach(([x, y], i) => i ? kc.lineTo(x, y) : kc.moveTo(x, y));
+  const kcg = new THREE.ExtrudeGeometry(kc, { depth: .036, bevelEnabled: true, bevelSize: .008, bevelThickness: .008, bevelSegments: 2, curveSegments: 4 }); kcg.translate(0, 0, -.018);
+  K.add(kcg, ebony, 1.62);
+  [[-b, b + a], [b, b + a], [0, b + 2 * a + .07]].forEach(([x, y]) => { const t = K.add(new THREE.SphereGeometry(.026, 14, 10), ebony, 1.62 + y); t.position.x = x; }); // trefoil ends
+  felt2(K.g, .36);
+  const king = K.g;
 
-  const pawnPts = [...foot.slice(0, 8), [.24, .2], [.18, .24], [.15, .32], [.12, .45], [.19, .5], [.19, .53], [.12, .56], [.0, .56]];
-  const pawn = turn(pawnPts, ivory); const ph = shadowed(new THREE.Mesh(new THREE.SphereGeometry(.15, 40, 28), ivory)); ph.position.y = .68; pawn.add(ph);
-  const fallen = turn(pawnPts, ebony); const fh = shadowed(new THREE.Mesh(new THREE.SphereGeometry(.15, 40, 28), ebony)); fh.position.y = .68; fallen.add(fh);
+  const Q = piece(ivory);
+  Q.plinth(plinthPts(.36)); Q.oct(.18, .15, .2, .84); Q.windows(.165, .38, .06, .18);
+  Q.oct(.25, .25, .84, .9);
+  const gable = new THREE.ExtrudeGeometry(lancet(.12, .02), { depth: .025, bevelEnabled: true, bevelSize: .006, bevelThickness: .006, bevelSegments: 2, curveSegments: 6 });
+  for (let k = 0; k < 8; k++) { const f = k * Math.PI / 4 + R8, ap = .21; const m = Q.add(gable, ivoryF, .9); m.position.x = Math.sin(f) * ap; m.position.z = Math.cos(f) * ap; m.rotation.y = f; }
+  Q.pinnacles(.25, .9, .14);
+  Q.oct(.13, .13, .9, 1.06); Q.windows(.13, .93, .04, .07);
+  Q.spire(.13, 1.06, .3, 3);
+  Q.add(new THREE.SphereGeometry(.055, 28, 20), ivory, 1.4);
+  felt2(Q.g, .34);
+  const queen = Q.g;
+
+  const gothicPawn = mat => {
+    const P = piece(mat);
+    P.plinth(plinthPts(.3)); P.oct(.14, .12, .2, .5); P.windows(.13, .27, .05, .12);
+    P.oct(.18, .18, .5, .55); P.spire(.13, .55, .2, 2);
+    P.add(new THREE.SphereGeometry(.045, 20, 14), mat, .78);
+    felt2(P.g, .28);
+    return P.g;
+  };
+  const pawn = gothicPawn(ivory), fallen = gothicPawn(ebony);
+
+  // Blind arcade of lancet arches running round the board frame.
+  const arcs = [], side = (S * n + .5) / 2 + .001;
+  for (let q = 0; q < 4; q++) for (let i = 0; i < 15; i++) {
+    const geo = new THREE.ExtrudeGeometry(lancet(.11, .07), { depth: .01, bevelEnabled: false, curveSegments: 5 });
+    geo.translate((i - 7) * .24, -.33, side).rotateY(q * Math.PI / 2); arcs.push(geo);
+  }
+  set.add(new THREE.Mesh(mergeGeometries(arcs), silver));
 
   const at = (p, i, j, sc = 1) => { p.position.set((i - n / 2 + .5) * S, .04, (j - n / 2 + .5) * S); p.scale.setScalar(sc); set.add(p); return p; };
   at(king, 1, 1, 1.15); at(queen, 2, 2, 1.1); at(pawn, 0, 3, 1.05);
-  at(fallen, 3, 0, 1.05); fallen.rotation.set(0, .6, Math.PI / 2 - .06); fallen.position.y = .04 + .36 * 1.05;
+  at(fallen, 3, 0, 1.05); fallen.rotation.set(0, .6, Math.PI / 2); fallen.position.y = .04 + .3 * 1.05;
 
   s.cam.position.set(0, 4.6, 10); s.cam.lookAt(0, .7, 0);
   s.onResize = (w, h) => set.scale.setScalar(Math.min(1.25, w / h * .62));
