@@ -134,7 +134,7 @@ function watch(page) {
   ok(await page.$$eval('canvas.pgl', cs => cs.length) === 0, 'no WebGL: project canvases removed');
   await page.locator('#work').screenshot({ path: 'shots/work-nogl.png' });
   // three.js itself logs why it could not create a context; that is expected here, anything else is not.
-  const real = errors.filter(e => !/WebGL context could not be created/.test(e));
+  const real = errors.filter(e => !/THREE\.WebGLRenderer: .*WebGL context/.test(e));
   ok(real.length === 0, `no WebGL: no page errors${real.length ? ': ' + real.join(' | ') : ''}`);
   await browser.close();
 }
